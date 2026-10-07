@@ -29,6 +29,8 @@ project action endpoint and direct or HoardLink agent calls; successful actions
 remain HTTP 200. Inspect native results and any operation receipt before
 retrying: a failed action may be followed by a successful save/inspection,
 and an operation that timed out may still complete.
+The browser shows messages from structured `detail.message`/`detail.error`
+objects or failed native result content, retaining timeout receipt IDs and URLs.
 
 ## Interchange and scope
 

@@ -29,6 +29,8 @@ devuelven HTTP 502 en la ruta del proyecto y en llamadas de agente directas o
 mediante HoardLink; los éxitos siguen devolviendo HTTP 200. Antes de reintentar,
 consulta los resultados y el recibo: un guardado/inspección posterior puede
 haber funcionado y una operación que excedió el tiempo puede seguir en curso.
+El navegador muestra `detail.message`/`detail.error` de objetos estructurados
+o el contenido del resultado nativo fallido, conservando IDs y URLs del recibo.
 
 ## Intercambio y alcance
 

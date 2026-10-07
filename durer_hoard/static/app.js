@@ -4,7 +4,22 @@ let lang=localStorage.getItem('durer-lang')||'en', current=null, catalog=null, c
 const tr=k=>(S[lang]||S.en)[k]||k;
 function translate(){document.documentElement.lang=lang;$$('[data-i18n]').forEach(e=>e.innerHTML=tr(e.dataset.i18n));$$('[data-i18n-title]').forEach(e=>e.title=tr(e.dataset.i18nTitle));$$('[data-i18n-placeholder]').forEach(e=>e.placeholder=tr(e.dataset.i18nPlaceholder));$('#language').textContent=lang==='en'?'ES':'EN'}
 function toast(s){let e=$('#toast');e.textContent=s;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2500)}
-async function req(url,opt){let r=await fetch(url,opt||{}),d;try{d=await r.json()}catch{d=await r.text()}if(!r.ok)throw Error(d.detail||d.error||r.statusText);return d}
+function apiErrorMessage(payload,statusText){
+  if(typeof payload==='string'&&payload.trim())return payload;
+  const detail=payload?.detail;
+  for(const message of [detail?.message,detail?.error,detail,payload?.message,payload?.error]){
+    if(typeof message==='string'&&message.trim())return message;
+  }
+  const failed=payload?.results?.find(row=>row.is_error||row.result?.isError);
+  const native=failed?.result;
+  for(const message of [native?.structuredContent?.message,native?.structuredContent?.error,native?.message,native?.error]){
+    if(typeof message==='string'&&message.trim())return message;
+  }
+  const text=native?.content?.filter(block=>block.type==='text'&&typeof block.text==='string').map(block=>block.text).join('\n');
+  if(text){try{const parsed=JSON.parse(text);for(const message of [parsed.message,parsed.error])if(typeof message==='string'&&message.trim())return message}catch{}return text}
+  return detail&&typeof detail==='object'?JSON.stringify(detail):(statusText||'Request failed');
+}
+async function req(url,opt){let r=await fetch(url,opt||{}),d;try{d=await r.json()}catch{d=await r.text()}if(!r.ok)throw Error(apiErrorMessage(d,r.statusText));return d}
 const post=data=>({method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
 function visible(show){$('#workspace').classList.toggle('hidden',!show);$('#welcome').classList.toggle('hidden',show);$('#library').classList.toggle('hidden',show)}
 async function projects(){try{let a=await req('/api/illustrations'),g=$('#projectGrid');$('#projectCount').textContent=a.length;g.innerHTML='';if(!a.length){g.innerHTML='<div class="library-empty">'+tr('libraryEmpty')+'</div>';return}a.forEach(p=>{let c=document.createElement('article');c.className='project-card';c.innerHTML='<div class="project-thumb"><img loading="lazy"><span class="thumb-empty">✳</span></div><div class="project-info"><b></b><small></small></div>';c.querySelector('img').src='/api/illustrations/'+p.id+'/preview?t='+encodeURIComponent(p.updated_at||'');c.querySelector('b').textContent=p.title;c.querySelector('small').textContent=new Date(p.updated_at).toLocaleString();c.onclick=()=>open(p.id);g.append(c)})}catch(e){toast(e.message)}}

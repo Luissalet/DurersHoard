@@ -3,13 +3,14 @@
   "base_head": "2373a13ca6533768da68ee1fd6bbedc70b6d0bcb",
   "publication": "Isolated candidate only; parent owns publication. Shared repository and live service data untouched.",
   "changed_files_sha256": {
-    "docs/CREATIVE-ENGINES.es.md": "8262f54ff65ba37f4204477fbb525a23059c391a23981dc2cb4cad186008d24b",
-    "docs/CREATIVE-ENGINES.md": "a639bcf0c1c46e111617f377ef84b22f6aee8817cd7e1a0aebaf2e2e6ef6b03a",
+    "docs/CREATIVE-ENGINES.es.md": "0349ec435ae0e0d7e07ba7d9853efb9e6301d9e501e363de8f9828a853b089c0",
+    "docs/CREATIVE-ENGINES.md": "dfbcd777302442b11bf3637769b9d7ee34a1dce73d469f80ed6e7e44699044b0",
     "durer_hoard/agent_tools.py": "ee247db9ce6143d8641e247cbf236c8849915ba3b8492798bb9fc836c6dd4c22",
     "durer_hoard/api.py": "04617e2018b098b28db45e0a5ecac74443e7b33644b3a6ad81f957d135b5d234",
     "durer_hoard/mcp_server.py": "264ae02f56fb0b95aa779227e47bc328d9c560a5439eaae393b50581689487e0",
     "durer_hoard/native.py": "9fa3ccfe268d3cd9ddbf084e1fb4f9d474232aa7787b6b2798f78a834899e250",
-    "tests/test_native_workflow.py": "f39f8e1a6a64a519077ebd0741bbbf99cedf51c8f213ddc95dab6e66d993f720"
+    "tests/test_native_workflow.py": "f39f8e1a6a64a519077ebd0741bbbf99cedf51c8f213ddc95dab6e66d993f720",
+    "durer_hoard/static/app.js": "768aa2098ec57f3473791e1380af08c0cf853d50839104dcb4732920a4a09101"
   },
   "native_cli_sha256": "d6a212ed206099b2b1a34e3b8e650438dce1383626c6e136962a87bb820da0d9",
   "validation": {
@@ -389,5 +390,21 @@
     "Failure marking follows outer native is_error and nested SDK isError flags; no added argument/path restrictions.",
     "HTTP change is scoped to project actions and illustration_native_call including the HoardLink wrapper.",
     "Native failure details and subsequent successful save/inspect remain visible; a failed/timeout call does not imply rollback."
-  ]
+  ],
+  "frontend_error_display": {
+    "path": "data/evidence/frontend-errors.json",
+    "sha256": "5a51c1e5d6facf77ca407633e5de30b07fe37bf1371d73772c41776d614c5baa",
+    "syntax": "node --check passed",
+    "cases": [
+      {
+        "case": "native_result_array",
+        "message": "draw_shape: missing string argument `shape`"
+      },
+      {
+        "case": "detail_object_timeout",
+        "message": "VectorCraft operation abcdef exceeded 1s; it may still complete. Check /api/operations/abcdef before retrying."
+      }
+    ],
+    "backend_retest": "Backend unchanged; previous full15-test native/API/MCP run remains valid."
+  }
 }
