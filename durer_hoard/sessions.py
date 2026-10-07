@@ -55,7 +55,7 @@ class NativeSessions:
                 raise RuntimeError("Could not start VectorCraft session loop")
             return self.loop
 
-    def execute(self, project_id: str, path: Path, actions: list[dict[str, Any]], timeout: int = 180):
+    def execute(self, project_id: str, path: Path, actions: list[dict[str, Any]], timeout: int = 180, new_document: dict[str, Any] | None = None):
         loop = self._ensure()
         operation_id = uuid.uuid4().hex
         with self.lock:
@@ -69,7 +69,7 @@ class NativeSessions:
                 "operation_id": operation_id, "project_id": project_id,
                 "state": "pending", "result": None, "error": None,
             }
-        future = asyncio.run_coroutine_threadsafe(self._execute(project_id, path, actions), loop)
+        future = asyncio.run_coroutine_threadsafe(self._execute(project_id, path, actions, new_document), loop)
         try:
             result = future.result(timeout=timeout)
             with self.lock:
@@ -101,7 +101,7 @@ class NativeSessions:
             record = self.operations.get(operation_id)
             return dict(record) if record else None
 
-    async def _start(self, project_id: str, path: Path):
+    async def _start(self, project_id: str, path: Path, new_document: dict[str, Any] | None = None):
         queue = asyncio.Queue()
         ready = asyncio.get_running_loop().create_future()
         async def worker():
@@ -117,7 +117,7 @@ class NativeSessions:
                             if opened.isError:
                                 raise RuntimeError("VectorCraft could not reopen the saved project: " + str(serial(opened)))
                         else:
-                            created = await client.call_tool("run_command", {"command": "file.new", "params": {}})
+                            created = await client.call_tool("run_command", {"command": "file.new", "params": dict(new_document or {})})
                             if created.isError:
                                 raise RuntimeError("VectorCraft could not create a document: " + str(serial(created)))
                             saved = await client.call_tool("save_file", {"path": str(path)})
@@ -163,12 +163,12 @@ class NativeSessions:
         await ready
         return _Session(task, queue)
 
-    async def _execute(self, project_id, path, actions):
+    async def _execute(self, project_id, path, actions, new_document=None):
         lock = self.project_locks.setdefault(project_id, asyncio.Lock())
         async with lock:
             session = self.sessions.get(project_id)
             if session is None or session.task.done():
-                session = await self._start(project_id, path)
+                session = await self._start(project_id, path, new_document)
                 self.sessions[project_id] = session
             answer = asyncio.get_running_loop().create_future()
             await session.queue.put((actions, answer))

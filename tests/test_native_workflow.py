@@ -3,9 +3,11 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import asyncio
 import shutil
+import subprocess
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -85,6 +87,72 @@ def test_native_create_edit_undo_reopen_and_export(isolated):
     assert store.read(item["id"])["reference"] == f"hoard://durer/illustration/{item['id']}"
 
 
+@pytest.mark.parametrize(("unit", "points_per_unit"), [
+    ("Pixels", 1), ("Points", 1), ("Picas", 12), ("Inches", 72),
+    ("Millimeters", 72 / 25.4), ("Centimeters", 72 / 2.54),
+    ("Feet", 864), ("Yards", 2592), ("Meters", 72 / 0.0254),
+    ("Feet & Inches", 864),
+])
+def test_canvas_input_units_convert_to_native_points(unit, points_per_unit):
+    from durer_hoard.store import canvas_settings
+
+    manifest, params = canvas_settings(2, 3, unit)
+    assert manifest["units"] == unit
+    assert params["units"] == unit
+    assert params["width"] == pytest.approx(2 * points_per_unit)
+    assert params["height"] == pytest.approx(3 * points_per_unit)
+
+
+def test_custom_canvas_size_units_and_artwork_export_are_native(isolated):
+    from durer_hoard.api import app
+    from durer_hoard.sessions import sessions
+
+    cli_info = lambda path: json.loads(subprocess.check_output([str(CLI), "info", str(path)], text=True))
+    with TestClient(app, base_url="http://127.0.0.1:5222") as client:
+        custom = client.post("/api/illustrations", json={
+            "title": "400 by 300 points", "width": 400, "height": 300, "units": "Points"})
+        assert custom.status_code == 200, custom.text
+        item = custom.json()
+        assert item["canvas"] == {"width": 400.0, "height": 300.0, "width_points": 400.0, "height_points": 300.0, "units": "Points"}
+        native = Path(item["project_file"])
+        info = cli_info(native)
+        assert info["info"]["units"] == "Points"
+        assert info["artboards"][0]["rect"] == [0.0, 0.0, 400.0, 300.0]
+
+        drawn = client.post(f"/api/illustrations/{item['id']}/actions", json={"actions": [{
+            "name": "draw_shape", "arguments": {"shape": "rectangle", "x": 17, "y": 23,
+                "width": 80, "height": 50, "fill": "#ce744c", "stroke": "#24261f", "strokeWidth": 0}}]})
+        assert drawn.status_code == 200, drawn.text
+        exported = client.post(f"/api/illustrations/{item['id']}/export", json={"format": "svg"})
+        assert exported.status_code == 200, exported.text
+        svg = client.get(exported.json()["url"]).text
+        assert 'viewBox="0 0 400 300"' in svg
+        assert 'd="M17 23 L97 23 L97 73 L17 73 Z"' in svg
+        assert svg.count('fill="#ce744c"') == 1
+
+        millimeters = client.post("/api/illustrations", json={
+            "title": "210 by 297 millimeters", "width": 210, "height": 297, "units": "Millimeters"})
+        assert millimeters.status_code == 200, millimeters.text
+        second = millimeters.json()
+        other = cli_info(Path(second["project_file"]))
+        assert other["info"]["units"] == "Millimeters"
+        assert (other["artboards"][0]["rect"][2], other["artboards"][0]["rect"][3]) == pytest.approx((210 * 72 / 25.4, 297 * 72 / 25.4), rel=1e-6)
+        physical_pdf = client.post(f"/api/illustrations/{second['id']}/export", json={"format": "pdf"})
+        assert physical_pdf.status_code == 200, physical_pdf.text
+        pdf_bytes = client.get(physical_pdf.json()["url"]).content
+        media_box = re.search(rb"MediaBox\s*\[\s*0\s+0\s+([0-9.]+)\s+([0-9.]+)", pdf_bytes)
+        assert media_box, pdf_bytes[:500]
+        assert float(media_box.group(1)) == pytest.approx(210 * 72 / 25.4, abs=0.01)
+        assert float(media_box.group(2)) == pytest.approx(297 * 72 / 25.4, abs=0.01)
+
+        default = client.post("/api/illustrations", json={"title": "Native defaults"})
+        assert default.status_code == 200, default.text
+        fallback = cli_info(Path(default.json()["project_file"]))
+        assert fallback["artboards"][0]["rect"] == [0.0, 0.0, 612.0, 792.0]
+        assert len(client.get("/api/illustrations").json()) == 3
+    sessions.close()
+
+
 def test_file_snapshots_restore_undo_and_redo_after_engine_restart(isolated):
     from durer_hoard import store
     from durer_hoard.history import execute
@@ -138,7 +206,7 @@ def test_concurrent_first_calls_share_one_native_session_and_keep_both_edits(iso
 def test_timeout_returns_reconcilable_receipt_without_cancelling_work(isolated, monkeypatch):
     from durer_hoard.sessions import sessions
 
-    async def delayed(project_id, path, actions):
+    async def delayed(project_id, path, actions, new_document=None):
         await asyncio.sleep(0.12)
         return [{"name": "inspect_document", "is_error": False, "result": {"done": True}}]
 
@@ -209,9 +277,12 @@ def test_api_import_copies_source_and_keeps_project_editable(isolated):
         token_path = isolated / "mcp-token"
         token = token_path.read_text(encoding="utf-8").strip()
         hub_create = client.post("/api/agent/call", headers={"Authorization": "Bearer " + token}, json={
-            "name": "illustration_create", "arguments": {"title": "HoardLink contract"}})
+            "name": "illustration_create", "arguments": {"title": "HoardLink contract", "width": 400, "height": 300, "units": "Points"}})
         assert hub_create.status_code == 200, hub_create.text
         assert hub_create.json()["illustration"]["reference"].startswith("hoard://durer/illustration/")
+        assert hub_create.json()["illustration"]["canvas"] == {"width": 400.0, "height": 300.0, "width_points": 400.0, "height_points": 300.0, "units": "Points"}
+        hub_doc = json.loads(subprocess.check_output([str(CLI), "info", hub_create.json()["illustration"]["project_file"]], text=True))
+        assert hub_doc["artboards"][0]["rect"] == [0.0, 0.0, 400.0, 300.0]
         imported = client.post("/api/illustrations/import?title=Source%20preserved", files={
             "file": ("source.svg", svg, "image/svg+xml")})
         assert imported.status_code == 200, imported.text
@@ -300,9 +371,14 @@ def test_faustus_stdio_mcp_lists_and_dispatches_complete_native_tools(isolated):
                 assert "vectorcraft_transform" in names
                 assert "vectorcraft_pathfinder" in names
                 assert "vectorcraft_catalog" in names
-                created = await client.call_tool("illustration_create", {"title": "MCP drawing"})
+                create_tool = next(tool for tool in tools if tool.name == "illustration_create")
+                assert {"width", "height", "units"}.issubset(create_tool.inputSchema["properties"])
+                created = await client.call_tool("illustration_create", {"title": "MCP drawing", "width": 400, "height": 300, "units": "Points"})
                 payload = json.loads(created.content[0].text)
                 project_id = payload["illustration"]["id"]
+                from durer_hoard.store import project_root
+                assert payload["illustration"]["canvas"] == {"width": 400, "height": 300, "width_points": 400.0, "height_points": 300.0, "units": "Points"}
+                assert json.loads(subprocess.check_output([str(CLI), "info", str(project_root(project_id) / "project.vectorcraft")], text=True))["artboards"][0]["rect"] == [0.0, 0.0, 400.0, 300.0]
                 drawn = await client.call_tool("vectorcraft_draw_shape", {
                     "project_id": project_id,
                     "shape": "rectangle", "x": 15, "y": 25, "width": 85, "height": 65,

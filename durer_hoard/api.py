@@ -8,7 +8,7 @@ import shutil
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
@@ -53,6 +53,9 @@ if hoard_guard:
 
 class CreateRequest(BaseModel):
     title: str = Field(min_length=1, max_length=160)
+    width: float | None = Field(default=None, gt=0, le=100000)
+    height: float | None = Field(default=None, gt=0, le=100000)
+    units: Literal["Pixels", "Points", "Picas", "Inches", "Millimeters", "Centimeters", "Feet", "Yards", "Meters", "Feet & Inches"] | None = None
 
 
 class ActionsRequest(BaseModel):
@@ -113,9 +116,10 @@ def illustrations():
 @app.post("/api/illustrations")
 def new_illustration(payload: CreateRequest):
     try:
-        item = store.create(payload.title)
+        canvas, native_canvas = store.canvas_settings(payload.width, payload.height, payload.units)
+        item = store.create(payload.title, canvas=canvas)
         project, root = _project(item["id"])
-        results = sessions.execute(item["id"], root / "project.vectorcraft", [])
+        results = sessions.execute(item["id"], root / "project.vectorcraft", [], new_document=native_canvas)
         return {**project, "results": results}
     except Exception as exc:
         raise HTTPException(503, str(exc)) from exc

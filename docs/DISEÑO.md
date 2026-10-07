@@ -17,3 +17,8 @@ This is an adaptation of the existing Hoard interface pattern for illustration w
 ## Review status
 
 The inherited palette and type choices were copied from the current Gutenberg Operate styles. A single desktop/mobile visual pass is required after implementation. Current feature parity against the underlying editor is unmeasured.
+
+
+## Tamaño del lienzo
+
+El diálogo de creación muestra ancho, alto y unidad. VectorCraft recibe las dimensiones numéricas en puntos; Dürer convierte desde la unidad elegida y configura esa unidad para la regla del documento. Así, 210 × 297 milímetros se convierte a 595,2756 × 841,8898 puntos y el PDF resultante tiene MediaBox A4. “Feet & Inches” se introduce en pies decimales. El valor inicial es 612 × 792 puntos, el tamaño predeterminado verificado de VectorCraft 0.3.1. REST, HoardLink y MCP aplican la misma conversión; si se omite el tamaño, se mantienen los valores predeterminados del motor.

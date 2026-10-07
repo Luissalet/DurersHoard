@@ -33,7 +33,7 @@ async def list_tools():
     native = catalog()
     tools = [
         Tool(name="illustration_list", description="List persistent Dürer's Hoard vector projects.", inputSchema={"type": "object", "properties": {}}),
-        Tool(name="illustration_create", description="Create an editable VectorCraft project.", inputSchema={"type": "object", "properties": {"title": {"type": "string"}}, "required": ["title"]}),
+        Tool(name="illustration_create", description="Create an editable VectorCraft project; optional width and height use the selected units and are converted to the point values required by VectorCraft file.new; units also sets the document ruler display (points by default). For Feet & Inches, enter decimal feet.", inputSchema={"type": "object", "properties": {"title": {"type": "string"}, "width": {"type": "number", "exclusiveMinimum": 0, "maximum": 100000, "description": "Canvas width in units; converted to native points"}, "height": {"type": "number", "exclusiveMinimum": 0, "maximum": 100000, "description": "Canvas height in units; converted to native points"}, "units": {"type": "string", "enum": sorted(store.CANVAS_UNITS), "description": "Selected size input units and document ruler units; Feet & Inches values are decimal feet"}}, "required": ["title"]}),
         Tool(name="illustration_inspect", description="Inspect a project's native document using VectorCraft.", inputSchema={"type": "object", "properties": {"project_id": {"type": "string"}}, "required": ["project_id"]}),
         Tool(name="illustration_native_call", description="Call any verified native VectorCraft MCP tool in a persistent project session. Discover exact names and schemas from vectorcraft_catalog.", inputSchema={"type": "object", "properties": {"project_id": {"type": "string"}, "tool": {"type": "string"}, "arguments": {"type": "object"}}, "required": ["project_id", "tool", "arguments"]}),
         Tool(name="vectorcraft_catalog", description="Return the full native tool schema, CLI help, and unfiltered command registry.", inputSchema={"type": "object", "properties": {}}),
@@ -59,9 +59,10 @@ async def call_tool(name: str, arguments: dict[str, Any]):
         if name == "illustration_list":
             return _text(store.list_projects())
         if name == "illustration_create":
-            item = store.create(str(arguments["title"]))
+            canvas, native_canvas = store.canvas_settings(arguments.get("width"), arguments.get("height"), arguments.get("units"))
+            item = store.create(str(arguments["title"]), canvas=canvas)
             root = store.project_root(item["id"])
-            result = sessions.execute(item["id"], root / "project.vectorcraft", [])
+            result = sessions.execute(item["id"], root / "project.vectorcraft", [], new_document=native_canvas)
             return _text({"illustration": store.read(item["id"]), "results": result})
         project_id = str(arguments.get("project_id", ""))
         item = store.read(project_id)

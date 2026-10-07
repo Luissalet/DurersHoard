@@ -8,6 +8,12 @@ Native tools include command discovery/dispatch, document and UI inspection, sel
 
 The CLI help confirms `.vectorcraft`, SVG, PDF, PNG, JPEG, WebP, GIF, TIFF, BMP, DXF, EPS, EMF, WMF, PSD, and related export modes. The focused UI exposes SVG, PNG, PDF, WebP, and native project download. Other formats remain available through the native catalog/API.
 
+## Canvas dimensions
+
+The native `file.new` schema documents numeric `width` and `height` in points; `units` chooses the document ruler display. Dürer accepts dimensions in the selected unit and converts them to the point values sent to VectorCraft. It supports Pixels (1 native pixel per value), Points, Picas, Inches, Millimeters, Centimeters, Feet, Yards, Meters, and Feet & Inches (entered as decimal feet). With dimensions but no unit, Points are used; with no size fields, Dürer calls `file.new` with `{}` and preserves the release default of 612 × 792 points. UI dimensions are document measurements, not CSS pixels.
+
+CLI readback and PDF export confirmed 400 × 300 Points and physical A4: 210 × 297 Millimeters converts to a 595.2756 × 841.8898 point artboard and a `595.276 × 841.89 pt` PDF MediaBox. A native API test draws one rectangle at document coordinates (17, 23) and confirms its single painted path and the 400 × 300 SVG viewBox after export.
+
 The CLI help documents the GUI command `vectorcraft --control <port>` and client command `vectorcraft-cli mcp --connect <address>`. The release bundle contains the sibling Windows GUI executable. The optional workspace button starts a separate GUI process with an isolated runtime folder, connects its complete MCP surface, and opens the same `.vectorcraft` project. This path was not launched during automated tests.
 
 ## Persistence and sources

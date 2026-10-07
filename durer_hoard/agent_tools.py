@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
@@ -24,6 +24,9 @@ class ProjectId(BaseModel):
 
 class Create(BaseModel):
     title: str = Field(min_length=1, max_length=160)
+    width: float | None = Field(default=None, gt=0, le=100000)
+    height: float | None = Field(default=None, gt=0, le=100000)
+    units: Literal["Pixels", "Points", "Picas", "Inches", "Millimeters", "Centimeters", "Feet", "Yards", "Meters", "Feet & Inches"] | None = None
 
 
 class NativeCall(BaseModel):
@@ -54,9 +57,10 @@ def illustration_list():
 @router.post("/illustration_create")
 def illustration_create(payload: Create):
     """Create an editable native VectorCraft illustration project."""
-    item = store.create(payload.title)
+    canvas, native_canvas = store.canvas_settings(payload.width, payload.height, payload.units)
+    item = store.create(payload.title, canvas=canvas)
     root = store.project_root(item["id"])
-    results = sessions.execute(item["id"], root / "project.vectorcraft", [])
+    results = sessions.execute(item["id"], root / "project.vectorcraft", [], new_document=native_canvas)
     return {"illustration": store.read(item["id"]), "results": results}
 
 
