@@ -19,6 +19,7 @@ from .config import ROOT, settings
 from .native import catalog, dispatch, executable, launch_gui, failed_results
 from .history import execute as history_execute
 from .sessions import sessions
+from .thumbnails import thumbnail as gallery_thumbnail
 from . import store
 
 try:
@@ -215,6 +216,19 @@ def preview(project_id: str):
         return FileResponse(path, media_type="image/png", headers={"Cache-Control": "no-store"})
     except Exception as exc:
         raise HTTPException(502, f"Preview render failed: {exc}") from exc
+
+
+@app.get("/api/illustrations/{project_id}/thumbnail")
+def thumbnail(project_id: str, refresh: bool = False):
+    _, root = _project(project_id)
+    try:
+        path, hit = gallery_thumbnail(root / "project.vectorcraft", refresh=refresh)
+        return FileResponse(path, media_type="image/png", headers={
+            "Cache-Control": "no-cache", "X-Durer-Thumbnail-Cache": "hit" if hit else "miss"})
+    except FileNotFoundError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(502, f"Thumbnail render failed: {exc}") from exc
 
 
 @app.get("/api/illustrations/{project_id}/native")

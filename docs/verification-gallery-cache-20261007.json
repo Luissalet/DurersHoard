@@ -1,0 +1,127 @@
+{
+  "candidate": "durer-preview-cache-20261007",
+  "base_head": "bd357e0690f7e0fe696edc15fd22769d625f7e6d",
+  "validation_base": "bd357e0690f7e0fe696edc15fd22769d625f7e6d",
+  "publication": "Isolated candidate only. Parent publication pending frontend repair rebase.",
+  "changed_files_sha256": {
+    "docs/CREATIVE-ENGINES.es.md": "de3aaadc9d44dd96abba4b948a15c05457e2c20d7f7cc3b92474083dc9840dd0",
+    "docs/CREATIVE-ENGINES.md": "e2f3f59e5a4a9d25c56ebb26e65e6c3af74e889a385d5b3dcead31c55dd7e12c",
+    "durer_hoard/api.py": "e340cc13c90f2ae71a6456108545bf529dc1fe490d4503a86b654a8c47e3582e",
+    "durer_hoard/static/app.js": "43f9d1168d4c1206fc89235df6c9e8547527d5c7d89e74fbd39de77090ee4bfe",
+    "tests/test_native_workflow.py": "468b7a67bb6850621f0d8994ebe9b1c9b4036f8c3f47ce5e6d9e50f95abde01a",
+    "durer_hoard/thumbnails.py": "167c17e2941bba4ef0b31e8b853a9fccce239b389d55718abeec9af9198911a0"
+  },
+  "validation": {
+    "suite": "29 passed in8.47s (26 prior tests plus3 thumbnail regressions)",
+    "frontend": "node --check passed; only gallery card endpoint changes; live editor preview untouched",
+    "baseline": {
+      "owner_pid": 18020,
+      "projects": 3,
+      "before": [],
+      "first_gallery_statuses": [
+        200,
+        200,
+        200
+      ],
+      "persistent_pool_after_gallery": 3,
+      "after_first": [
+        {
+          "ProcessId": 56264,
+          "ParentProcessId": 18020
+        },
+        {
+          "ProcessId": 60000,
+          "ParentProcessId": 18020
+        },
+        {
+          "ProcessId": 62148,
+          "ParentProcessId": 18020
+        }
+      ],
+      "second_gallery_statuses": [
+        200,
+        200,
+        200
+      ],
+      "after_second": [
+        {
+          "ProcessId": 56264,
+          "ParentProcessId": 18020
+        },
+        {
+          "ProcessId": 60000,
+          "ParentProcessId": 18020
+        },
+        {
+          "ProcessId": 62148,
+          "ParentProcessId": 18020
+        }
+      ],
+      "after_close": []
+    },
+    "fixed": {
+      "projects": 3,
+      "native_processes_before": [],
+      "native_processes_after_first": [],
+      "second_gallery_new_renders": 0,
+      "native_processes_after_repeat": [],
+      "edit_invalidates_and_undo_retained": true,
+      "explicit_refresh": true,
+      "external_saved_file_invalidates": true,
+      "source_hash_unchanged": "e71a7182650c4c0c2563165be7c44385724ea2afa0b381739d547dc37e0af2f3",
+      "first_thumbnail_sha256": [
+        "54af0b39bcddc9adc5e726d3799f432fc437b761906f60b008501333ee10266e",
+        "93f24e56a3222349bb74501a84f97dec263387f24a928dc9e98ae63a021dd90c",
+        "84024ea4e92c05d8498d2c8deadca5dcd2dceec13eaa8f2a9e7b19eba26a8c82"
+      ],
+      "native_processes_after_close": []
+    },
+    "transient_concurrency": "Semaphore exercised with4 converter requests; maximum2 active",
+    "relative_links": "Actual native SVG with linkedPNG preserves relative sources/linked.png; greenpixel64,176,128; native/linkedPNG/SVG hashes unchanged",
+    "failure_cleanup": "Converter exception removes snapshot and full-render staging directory; native file unchanged"
+  },
+  "receipts": [
+    {
+      "path": "data/gallery-baseline.json",
+      "sha256": "c5fc7216f027e0f365a70b2e9b8fea696504df5d9b3f65f76e631523e3ee4304"
+    },
+    {
+      "path": "data/evidence/gallery-fixed.json",
+      "sha256": "2f8f925fc61873527cd64d2b331d7ae0c277f9b56bb14394aedb778981446ec7"
+    }
+  ],
+  "native_cli_sha256": "d6a212ed206099b2b1a34e3b8e650438dce1383626c6e136962a87bb820da0d9",
+  "artifacts": [
+    {
+      "record": "data/full-qa/test_real_thumbnail_snapshot_r0/data/illustrations/7a9b1c373f3342e083c460db6fc09876/cache/thumbnail.json",
+      "png": "data/full-qa/test_real_thumbnail_snapshot_r0/data/illustrations/7a9b1c373f3342e083c460db6fc09876/cache/thumbnail-cd2ccce1f54643aeb0d9a2057d1f7156.png",
+      "png_sha256": "d36951443eabc2b7e22823956fdd9985a6ccdf9a80baf44134266ff302ebb0a1",
+      "native_source_sha256": "72ad415875038d94cae2b955ed5481759ddf38452f023868340c1d63c3c50226"
+    },
+    {
+      "record": "data/full-qa/test_real_gallery_cache_does_n0/data/illustrations/e8e47404a5074c9cabcf67c7f2b0d08d/cache/thumbnail.json",
+      "png": "data/full-qa/test_real_gallery_cache_does_n0/data/illustrations/e8e47404a5074c9cabcf67c7f2b0d08d/cache/thumbnail-d22f867d668e4a60b735046ad00d4462.png",
+      "png_sha256": "93f24e56a3222349bb74501a84f97dec263387f24a928dc9e98ae63a021dd90c",
+      "native_source_sha256": "d90f8d2de94db8f64697596a551c5028ada2c78a2703e2a8bd48094f460faee1"
+    },
+    {
+      "record": "data/full-qa/test_real_gallery_cache_does_n0/data/illustrations/9c0655d977e745549041f7aecb5041d5/cache/thumbnail.json",
+      "png": "data/full-qa/test_real_gallery_cache_does_n0/data/illustrations/9c0655d977e745549041f7aecb5041d5/cache/thumbnail-a8d4394d42a84934962ef9bb86407dc9.png",
+      "png_sha256": "84024ea4e92c05d8498d2c8deadca5dcd2dceec13eaa8f2a9e7b19eba26a8c82",
+      "native_source_sha256": "41579531c5076aa33b35c75cc75202d83895ae28fcd09a16cc82afc4ede93ca2"
+    },
+    {
+      "record": "data/full-qa/test_real_gallery_cache_does_n0/data/illustrations/8d5f7fb30eb34f27b81256f60b487cb0/cache/thumbnail.json",
+      "png": "data/full-qa/test_real_gallery_cache_does_n0/data/illustrations/8d5f7fb30eb34f27b81256f60b487cb0/cache/thumbnail-85434ccc58a0422b81f1985c4f5da2d1.png",
+      "png_sha256": "93f24e56a3222349bb74501a84f97dec263387f24a928dc9e98ae63a021dd90c",
+      "native_source_sha256": "d90f8d2de94db8f64697596a551c5028ada2c78a2703e2a8bd48094f460faee1"
+    }
+  ],
+  "limits": [
+    "Gallery /thumbnail reads saved native files; selected editor /preview retains its live session behavior.",
+    "Cold thumbnails use bounded2 transient converters and512px cached PNG; no hard project or editor-session cap introduced.",
+    "Native-file SHA and executable identity/stat invalidate cache. Linkedasset/font/preference changes without native-file changes require refresh=true.",
+    "Keeps current/previous frame; Windows files held by response readers may defer removal until later render.",
+    "No GUI launch, live app restart/stop, principal/model calls, or real user data touched."
+  ]
+}

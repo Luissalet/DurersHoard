@@ -12,6 +12,24 @@ La ayuda documenta `vectorcraft --control <puerto>` para abrir la GUI y `vectorc
 
 ## Persistencia y fuentes
 
+Las tarjetas de la biblioteca usan `/api/illustrations/{id}/thumbnail`: PNG
+en caché con lado mayor de hasta 512 píxeles. Si falta la caché, se copia el
+documento nativo guardado junto al original para conservar el contexto de las
+imágenes enlazadas y se renderiza mediante un conversor CLI transitorio.
+Solo se ejecutan dos conversores de miniaturas simultáneamente, que terminan
+al acabar; navegar por la biblioteca no crea sesiones persistentes de edición.
+El conversor nunca escribe el original y las pruebas comprueban que los hashes
+de documentos/fuentes no cambian.
+
+La caché se invalida por SHA-256 del documento e identidad/estado del ejecutable,
+incluidos cambios externos del nativo sin modificar los metadatos de la Hoard.
+Las cargas repetidas reutilizan el PNG. `?refresh=true` fuerza el render cuando
+cambian fuentes, preferencias o imágenes enlazadas sin cambiar el documento.
+Se conservan las dos últimas imágenes; las anteriores se borran, con reintento
+posterior si Windows las mantiene abiertas. Se limpian las copias temporales
+también al fallar. `/preview` sigue siendo la vista del editor activo, conservando
+su undo y el estado no guardado del escritorio conectado.
+
 Cada proyecto usa un ID hexadecimal aleatorio de 128 bits. Los metadatos viven en `illustrations/{id}/illustration.json`, el documento editable en `project.vectorcraft`, las fuentes copiadas en `sources/` y los archivos generados en `exports/`. La descarga de archivos limita las rutas a esas carpetas. Cada importación web se copia antes de abrirla y conserva nombre, hash y tamaño.
 
 Mientras el servicio está abierto, un proceso MCP nativo persiste por proyecto y conserva el undo de VectorCraft entre llamadas. Antes de una modificación guardada, Dürer's Hoard conserva el archivo nativo previo bajo `snapshots/`; undo y redo pueden restaurar esas copias al reiniciar el servicio. Se guardan hasta 100 pasos de undo. Las llamadas simultáneas al mismo proyecto se serializan en esa sesión.

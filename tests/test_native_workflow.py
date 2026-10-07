@@ -32,6 +32,16 @@ def _find_verified_cli() -> Path | None:
 CLI = _find_verified_cli()
 
 
+def _own_native_processes():
+    if os.name != "nt":
+        return None
+    import subprocess
+    query = f"Get-CimInstance Win32_Process -Filter \"Name='vectorcraft-cli.exe' AND ParentProcessId={os.getpid()}\" | Select-Object ProcessId,ParentProcessId | ConvertTo-Json -Compress"
+    result = subprocess.check_output(["powershell", "-NoProfile", "-Command", query], text=True).strip()
+    rows = json.loads(result) if result else []
+    return rows if isinstance(rows, list) else [rows]
+
+
 @pytest.fixture
 def isolated(monkeypatch, tmp_path):
     if not CLI or not CLI.is_file():
@@ -493,3 +503,175 @@ def test_mcp_export_details_and_timeout_operation_receipt_are_retained(isolated,
     pending = asyncio.run(call_tool("illustration_inspect", {"project_id": item["id"]}))
     assert pending.isError is True
     assert pending.structuredContent["error"] == message
+
+
+def test_real_gallery_cache_does_not_create_editor_processes_and_invalidates(isolated, monkeypatch):
+    import io
+    from PIL import Image
+    from durer_hoard.api import app
+    from durer_hoard import store, thumbnails
+    from durer_hoard.sessions import sessions
+    from durer_hoard.history import execute
+
+    source = isolated.parent / "original.svg"
+    source.write_text('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="8"/></svg>', encoding="utf-8")
+    source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+    projects = []
+    for index, color in enumerate(("#e02010", "#1050e0", "#10a020")):
+        item = store.create(f"Gallery cache fixture {index}", source=source)
+        root = store.project_root(item["id"])
+        path = root / "project.vectorcraft"
+        results = sessions.execute(item["id"], path, [{"name": "draw_shape", "arguments": {
+            "shape": "rectangle", "x": 30, "y": 40, "width": 120, "height": 90, "fill": color}}],
+            new_document={"width": 720, "height": 480})
+        assert not any(row["is_error"] for row in results)
+        projects.append((item, path, hashlib.sha256(path.read_bytes()).hexdigest()))
+    sessions.close()
+    assert _own_native_processes() in ([], None)
+    renders = []
+    convert = thumbnails._convert
+    def observed(snapshot, output):
+        # Relative links retain their original document directory.
+        assert snapshot.parent == output.parents[2]
+        renders.append(str(snapshot))
+        convert(snapshot, output)
+    monkeypatch.setattr(thumbnails, "_convert", observed)
+    evidence = {"projects": 3, "native_processes_before": _own_native_processes()}
+    with TestClient(app, base_url="http://127.0.0.1:5222") as client:
+        first = []
+        for item, path, original_hash in projects:
+            response = client.get(f"/api/illustrations/{item['id']}/thumbnail")
+            assert response.status_code == 200, response.text
+            assert response.headers["x-durer-thumbnail-cache"] == "miss"
+            with Image.open(io.BytesIO(response.content)) as image:
+                assert max(image.size) == 512
+            first.append(response.content)
+            assert hashlib.sha256(path.read_bytes()).hexdigest() == original_hash
+        assert len(renders) == 3 and len(sessions.sessions) == 0
+        evidence["native_processes_after_first"] = _own_native_processes()
+        assert evidence["native_processes_after_first"] in ([], None)
+        for index, (item, path, original_hash) in enumerate(projects):
+            response = client.get(f"/api/illustrations/{item['id']}/thumbnail?t=another-gallery-load")
+            assert response.headers["x-durer-thumbnail-cache"] == "hit"
+            assert response.content == first[index]
+            assert hashlib.sha256(path.read_bytes()).hexdigest() == original_hash
+            assert not list(path.parent.glob(".thumbnail-source-*"))
+            assert not list((path.parent / "cache").glob("render-*"))
+            assert len(list((path.parent / "cache").glob("thumbnail-*.png"))) == 1
+            assert Path(item["source"]["path"]).read_bytes() == source.read_bytes()
+        assert len(renders) == 3 and len(sessions.sessions) == 0
+        evidence["second_gallery_new_renders"] = 0
+        evidence["native_processes_after_repeat"] = _own_native_processes()
+        item, path, original_hash = projects[0]
+        changed = execute(item["id"], path, [{"name": "draw_shape", "arguments": {
+            "shape": "ellipse", "x": 250, "y": 100, "width": 100, "height": 100, "fill": "#7d2fc0"}}])
+        assert not any(row["is_error"] for row in changed)
+        edited_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+        response = client.get(f"/api/illustrations/{item['id']}/thumbnail")
+        assert response.headers["x-durer-thumbnail-cache"] == "miss" and response.content != first[0]
+        assert len(sessions.sessions) == 1 and len(renders) == 4
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == edited_hash
+        undone = execute(item["id"], path, [{"name": "undo", "arguments": {}}])
+        assert not any(row["is_error"] for row in undone)
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == original_hash
+        undo_thumbnail = client.get(f"/api/illustrations/{item['id']}/thumbnail")
+        assert undo_thumbnail.content == first[0]
+        evidence["edit_invalidates_and_undo_retained"] = True
+        refreshed = client.get(f"/api/illustrations/{item['id']}/thumbnail?refresh=true")
+        assert refreshed.headers["x-durer-thumbnail-cache"] == "miss"
+        assert refreshed.content == first[0]
+        evidence["explicit_refresh"] = True
+        # Simulate an external saved-file replacement, without touching metadata.
+        shutil.copyfile(projects[1][1], path)
+        external_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+        external = client.get(f"/api/illustrations/{item['id']}/thumbnail")
+        assert external.headers["x-durer-thumbnail-cache"] == "miss"
+        assert external.content == first[1]
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == external_hash
+        evidence["external_saved_file_invalidates"] = True
+        assert len(list((path.parent / "cache").glob("thumbnail-*.png"))) <= 2
+        assert hashlib.sha256(source.read_bytes()).hexdigest() == source_hash
+        evidence["source_hash_unchanged"] = source_hash
+        evidence["first_thumbnail_sha256"] = [hashlib.sha256(data).hexdigest() for data in first]
+    evidence["native_processes_after_close"] = _own_native_processes()
+    assert evidence["native_processes_after_close"] in ([], None)
+    output = os.environ.get("DURER_GALLERY_EVIDENCE")
+    if output:
+        destination = Path(output)
+        destination.mkdir(parents=True, exist_ok=True)
+        (destination / "gallery-fixed.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
+
+
+def test_transient_thumbnail_converters_are_bounded_and_failures_clean_up(isolated, monkeypatch):
+    from durer_hoard import thumbnails
+    from PIL import Image
+    import threading
+    active, peak = 0, 0
+    lock = threading.Lock()
+    def fake_run(args, **kwargs):
+        nonlocal active, peak
+        with lock:
+            active += 1
+            peak = max(peak, active)
+        time.sleep(0.08)
+        Image.new("RGB", (30, 20), "red").save(args[-1])
+        with lock:
+            active -= 1
+        return type("Result", (), {"returncode": 0})()
+    monkeypatch.setattr(thumbnails.subprocess, "run", fake_run)
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        jobs = [pool.submit(thumbnails._convert, isolated / "source", isolated.parent / f"render-{i}.png") for i in range(4)]
+        for job in jobs:
+            job.result()
+    assert peak == 2 and active == 0
+    project = isolated.parent / "project.vectorcraft"
+    project.write_bytes(b"synthetic native failure fixture")
+    def fail(*args):
+        raise RuntimeError("Native converter failed")
+    monkeypatch.setattr(thumbnails, "_convert", fail)
+    with pytest.raises(RuntimeError, match="converter failed"):
+        thumbnails.thumbnail(project)
+    assert project.read_bytes() == b"synthetic native failure fixture"
+    assert not list(project.parent.glob(".thumbnail-source-*"))
+    assert not list((project.parent / "cache").glob("render-*"))
+
+
+def test_real_thumbnail_snapshot_retains_relative_linked_image_context(isolated):
+    import io
+    from PIL import Image
+    from durer_hoard import store
+    from durer_hoard.api import app
+    from durer_hoard.sessions import sessions
+    item = store.create("Relative linked thumbnail")
+    root = store.project_root(item["id"])
+    asset = root / "sources" / "linked.png"
+    Image.new("RGB", (24, 24), (64, 176, 128)).save(asset)
+    source = root / "sources" / "source.svg"
+    source.write_text('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><image href="linked.png" x="10" y="10" width="60" height="60"/></svg>', encoding="utf-8")
+    project = root / "project.vectorcraft"
+    results = sessions.execute(item["id"], project, [{"name": "open_file", "arguments": {"path": str(source)}}])
+    assert not any(row["is_error"] for row in results)
+    sessions.close()
+    saved = json.loads(project.read_text(encoding="utf-8"))
+    links = []
+    def collect(value):
+        if isinstance(value, dict):
+            if isinstance(value.get("link"), dict):
+                links.append(value["link"])
+            for child in value.values():
+                collect(child)
+        elif isinstance(value, list):
+            for child in value:
+                collect(child)
+    collect(saved)
+    assert any(link.get("relative") == "sources/linked.png" for link in links)
+    before = {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in (project, asset, source)}
+    with TestClient(app, base_url="http://127.0.0.1:5222") as client:
+        response = client.get(f"/api/illustrations/{item['id']}/thumbnail")
+        assert response.status_code == 200, response.text
+        with Image.open(io.BytesIO(response.content)) as image:
+            assert image.convert("RGB").getpixel((30, 30)) == (64, 176, 128)
+        assert not sessions.sessions
+    assert before == {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in (project, asset, source)}
+    assert not list(root.glob(".thumbnail-source-*"))
+    assert _own_native_processes() in ([], None)

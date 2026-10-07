@@ -18,6 +18,24 @@ The CLI help documents the GUI command `vectorcraft --control <port>` and client
 
 ## Persistence and sources
 
+Gallery cards use `/api/illustrations/{id}/thumbnail`, a cached PNG with a
+512-pixel maximum long edge. A cache miss copies the saved native document
+beside its original (retaining the directory used to resolve linked images),
+then renders through a transient CLI converter. At most two thumbnail
+converters run together and each exits after rendering; browsing does not add
+persistent editor sessions. No preview converter receives the original native
+file for writing. Source/native hashes remain unchanged in the real tests.
+
+SHA-256 of the saved document and the configured executable's identity/stat
+invalidate cached thumbnails, including external native file replacements that
+leave Hoard metadata unchanged. Repeated gallery loads reuse the disk PNG.
+`?refresh=true` explicitly rerenders when external fonts, preferences or linked
+assets change without changing the native file. Current and previous PNG frames
+are retained; older frames are pruned (files held by a Windows reader are retried
+on a subsequent render). Temporary snapshots/full renders are cleaned on success
+and failure. The existing `/preview` remains the selected editor's live preview,
+so native undo and unsaved connected-desktop state retain their existing behavior.
+
 Illustrations use random 128-bit lowercase hex IDs. Metadata is stored in each data directory under `illustrations/{id}/illustration.json`; the editable document is `project.vectorcraft`, source copies are under `sources/`, and generated files are under `exports/`. API file delivery constrains paths to these folders. The original browser upload is copied before native open; its name, hash, and size are retained in metadata.
 
 One MCP stdio process is held open per project inside the running service. This preserves the engine's in-memory undo stack across calls while that process stays alive. Native saves are made after each action batch. Before a changed document is saved over, Dürer's Hoard saves its previous native file in `snapshots/`; undo/redo can restore these snapshots after service restart. Up to 100 undo snapshots are retained. Concurrent requests to one project share that native engine session and are serialized.
