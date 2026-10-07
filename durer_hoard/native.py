@@ -20,6 +20,13 @@ from .config import settings
 _gui_processes: dict[str, tuple[subprocess.Popen, str]] = {}
 
 
+def failed_results(results: list[dict[str, Any]]) -> bool:
+    """Keep native failure flags visible across the outer MCP/HTTP response."""
+    return any(row.get("is_error") is True or
+               (isinstance(row.get("result"), dict) and row["result"].get("isError") is True)
+               for row in results)
+
+
 def executable() -> Path:
     path = settings().vectorcraft_cli
     if path is None or not path.is_file():

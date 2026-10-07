@@ -20,6 +20,16 @@ Las primeras peticiones de cada proyecto comparten un bloqueo de inicialización
 
 Deshacer/rehacer compara el archivo resultante con el snapshot de destino exacto. Si el historial en memoria de VectorCraft produce otro archivo o da error, Dürer restaura el snapshot, lo vuelve a abrir y entrega una inspección nativa nueva. Así también se cubren ediciones externas hechas antes de reabrir el proyecto.
 
+Las respuestas MCP indican `CallToolResult.isError=true` cuando falla un
+proyecto/herramienta, la validación, una acción/guardado/inspección nativa o una
+excepción. Se conserva el texto JSON y las respuestas de objeto ofrecen el
+mismo contenido en `structuredContent`, con resultados nativos completos e
+IDs de operación si se supera el tiempo límite. Los fallos de acciones
+devuelven HTTP 502 en la ruta del proyecto y en llamadas de agente directas o
+mediante HoardLink; los éxitos siguen devolviendo HTTP 200. Antes de reintentar,
+consulta los resultados y el recibo: un guardado/inspección posterior puede
+haber funcionado y una operación que excedió el tiempo puede seguir en curso.
+
 ## Intercambio y alcance
 
 La exportación SVG, PNG y PDF está conectada directamente al motor. Se permite importar SVG, PNG, JPEG, WebP y PDF; el resultado depende del comportamiento de apertura/importación de VectorCraft. La fuente copiada permanece disponible si el documento de trabajo se convierte o modifica. `hoard://durer/illustration/{id}` identifica el proyecto persistente.

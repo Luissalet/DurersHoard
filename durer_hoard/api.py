@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .config import ROOT, settings
-from .native import catalog, dispatch, executable, launch_gui
+from .native import catalog, dispatch, executable, launch_gui, failed_results
 from .history import execute as history_execute
 from .sessions import sessions
 from . import store
@@ -159,7 +159,8 @@ def actions(project_id: str, payload: ActionsRequest):
     item, root = _project(project_id)
     try:
         results = history_execute(project_id, root / "project.vectorcraft", payload.actions)
-        return {"illustration": store.read(project_id), "results": results}
+        result = {"illustration": store.read(project_id), "results": results}
+        return JSONResponse(result, status_code=502) if failed_results(results) else result
     except Exception as exc:
         raise HTTPException(502, f"VectorCraft action failed: {exc}") from exc
 

@@ -1,0 +1,393 @@
+{
+  "candidate": "durer-mcp-errors-20261007",
+  "base_head": "2373a13ca6533768da68ee1fd6bbedc70b6d0bcb",
+  "publication": "Isolated candidate only; parent owns publication. Shared repository and live service data untouched.",
+  "changed_files_sha256": {
+    "docs/CREATIVE-ENGINES.es.md": "8262f54ff65ba37f4204477fbb525a23059c391a23981dc2cb4cad186008d24b",
+    "docs/CREATIVE-ENGINES.md": "a639bcf0c1c46e111617f377ef84b22f6aee8817cd7e1a0aebaf2e2e6ef6b03a",
+    "durer_hoard/agent_tools.py": "ee247db9ce6143d8641e247cbf236c8849915ba3b8492798bb9fc836c6dd4c22",
+    "durer_hoard/api.py": "04617e2018b098b28db45e0a5ecac74443e7b33644b3a6ad81f957d135b5d234",
+    "durer_hoard/mcp_server.py": "264ae02f56fb0b95aa779227e47bc328d9c560a5439eaae393b50581689487e0",
+    "durer_hoard/native.py": "9fa3ccfe268d3cd9ddbf084e1fb4f9d474232aa7787b6b2798f78a834899e250",
+    "tests/test_native_workflow.py": "f39f8e1a6a64a519077ebd0741bbbf99cedf51c8f213ddc95dab6e66d993f720"
+  },
+  "native_cli_sha256": "d6a212ed206099b2b1a34e3b8e650438dce1383626c6e136962a87bb820da0d9",
+  "validation": {
+    "suite": "15 passed in8.33s, existing12 tests plus3 new regression tests",
+    "mcp": "Actual SDK stdio with real native engine: unknown project/tool, bad native arguments and no-history undo isError=true; draw/inspect/export isError=false; structured payload equals retained text JSON.",
+    "http": "Actual real-native TestClient: project/actions, agent native route and HoardLink wrapper change native failure200→502 and retain native results. Valid recovery200.",
+    "operation_receipt": "Timeout exception regression preserves operation ID and reconciliation URL exactly; existing native timeout completion test passes.",
+    "scope": "No UI launch, principal-model calls, live service stop or real project data accessed."
+  },
+  "evidence": [
+    {
+      "label": "mcp_baseline",
+      "path": "data/mcp-baseline.json",
+      "sha256": "08906429d5c1c8318fa34ba84d79dbd4ecea1ca8995acfa593f70aed94936d59",
+      "cases": [
+        {
+          "case": "create",
+          "outer_is_error": false,
+          "native_flags": [
+            {
+              "name": "inspect_document",
+              "is_error": false
+            }
+          ]
+        },
+        {
+          "case": "unknown_project",
+          "outer_is_error": false,
+          "native_flags": []
+        },
+        {
+          "case": "unknown_native_tool",
+          "outer_is_error": false,
+          "native_flags": []
+        },
+        {
+          "case": "bad_native_arguments",
+          "outer_is_error": false,
+          "native_flags": [
+            {
+              "name": "draw_shape",
+              "is_error": true
+            },
+            {
+              "name": "save_file",
+              "is_error": false
+            },
+            {
+              "name": "inspect_document",
+              "is_error": false
+            }
+          ]
+        },
+        {
+          "case": "native_success",
+          "outer_is_error": false,
+          "native_flags": [
+            {
+              "name": "draw_shape",
+              "is_error": false
+            },
+            {
+              "name": "save_file",
+              "is_error": false
+            },
+            {
+              "name": "inspect_document",
+              "is_error": false
+            }
+          ]
+        },
+        {
+          "case": "inspect_success",
+          "outer_is_error": false,
+          "native_flags": [
+            {
+              "name": "inspect_document",
+              "is_error": false
+            },
+            {
+              "name": "inspect_document",
+              "is_error": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "http_baseline",
+      "path": "data/http-baseline.json",
+      "sha256": "b0ce1f8c7037e88c1649a8aa3eae83368b77c5206112eff5b94e4bf4b3d74f8a",
+      "cases": [
+        {
+          "case": "ui_actions",
+          "http_status": 200,
+          "native_flags": [
+            {
+              "name": "draw_shape",
+              "is_error": true
+            },
+            {
+              "name": "save_file",
+              "is_error": false
+            },
+            {
+              "name": "inspect_document",
+              "is_error": false
+            }
+          ]
+        },
+        {
+          "case": "agent_native",
+          "http_status": 200,
+          "native_flags": [
+            {
+              "name": "draw_shape",
+              "is_error": true
+            },
+            {
+              "name": "save_file",
+              "is_error": false
+            },
+            {
+              "name": "inspect_document",
+              "is_error": false
+            }
+          ]
+        },
+        {
+          "case": "hoard_wrapper",
+          "http_status": 200,
+          "native_flags": [
+            {
+              "name": "draw_shape",
+              "is_error": true
+            },
+            {
+              "name": "save_file",
+              "is_error": false
+            },
+            {
+              "name": "inspect_document",
+              "is_error": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "mcp_fixed",
+      "path": "data/evidence/mcp-fixed.json",
+      "sha256": "13ab69b660c205ce3c1415d6477e0c19550b45d1f54693a2bab16c4859dea4c3",
+      "cases": [
+        {
+          "case": "unknown_project",
+          "outer_is_error": true,
+          "native_flags": []
+        },
+        {
+          "case": "unknown_native_tool",
+          "outer_is_error": true,
+          "native_flags": []
+        },
+        {
+          "case": "bad_native_arguments",
+          "outer_is_error": true,
+          "native_flags": [
+            {
+              "name": "draw_shape",
+              "is_error": true
+            },
+            {
+              "name": "save_file",
+              "is_error": false
+            },
+            {
+              "name": "inspect_document",
+              "is_error": false
+            }
+          ]
+        },
+        {
+          "case": "undo_without_changes",
+          "outer_is_error": true,
+          "native_flags": [
+            {
+              "name": "undo",
+              "is_error": true
+            }
+          ]
+        },
+        {
+          "case": "native_success",
+          "outer_is_error": false,
+          "native_flags": [
+            {
+              "name": "draw_shape",
+              "is_error": false
+            },
+            {
+              "name": "save_file",
+              "is_error": false
+            },
+            {
+              "name": "inspect_document",
+              "is_error": false
+            }
+          ]
+        },
+        {
+          "case": "inspect_success",
+          "outer_is_error": false,
+          "native_flags": [
+            {
+              "name": "inspect_document",
+              "is_error": false
+            },
+            {
+              "name": "inspect_document",
+              "is_error": false
+            }
+          ]
+        },
+        {
+          "case": "export_success",
+          "outer_is_error": false,
+          "native_flags": [
+            {
+              "name": "export",
+              "is_error": false
+            },
+            {
+              "name": "save_file",
+              "is_error": false
+            },
+            {
+              "name": "inspect_document",
+              "is_error": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "http_fixed",
+      "path": "data/evidence/http-fixed.json",
+      "sha256": "20c98e56e0231e2c3bb260b20a49d67630e140f02b7426d2a3fe91db011426ab",
+      "cases": [
+        {
+          "case": "ui_actions",
+          "http_status": 502,
+          "native_flags": [
+            {
+              "name": "draw_shape",
+              "is_error": true
+            },
+            {
+              "name": "save_file",
+              "is_error": false
+            },
+            {
+              "name": "inspect_document",
+              "is_error": false
+            }
+          ]
+        },
+        {
+          "case": "agent_native",
+          "http_status": 502,
+          "native_flags": [
+            {
+              "name": "draw_shape",
+              "is_error": true
+            },
+            {
+              "name": "save_file",
+              "is_error": false
+            },
+            {
+              "name": "inspect_document",
+              "is_error": false
+            }
+          ]
+        },
+        {
+          "case": "hoard_wrapper",
+          "http_status": 502,
+          "native_flags": [
+            {
+              "name": "draw_shape",
+              "is_error": true
+            },
+            {
+              "name": "save_file",
+              "is_error": false
+            },
+            {
+              "name": "inspect_document",
+              "is_error": false
+            }
+          ]
+        },
+        {
+          "case": "hoard_recovered",
+          "http_status": 200,
+          "native_flags": [
+            {
+              "name": "draw_shape",
+              "is_error": false
+            },
+            {
+              "name": "save_file",
+              "is_error": false
+            },
+            {
+              "name": "inspect_document",
+              "is_error": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "native_projects": [
+    {
+      "path": "data/qa-fresh/test_real_stdio_marks_failures0/data/illustrations/04725a6750f34405870546145a51c3ff/project.vectorcraft",
+      "sha256": "1236c66e7955561624ea19df8df5c79603def041e0e9c3ed7df9f77363b6c17e",
+      "bytes": 24094
+    },
+    {
+      "path": "data/qa-fresh/test_native_create_edit_undo_r0/data/illustrations/585a38bed4d34d9f99f0155adb39fa6b/project.vectorcraft",
+      "sha256": "fcf29c3833803c80094366473345004f83ccfb5fa242d425fb6ec76efadbd885",
+      "bytes": 24357
+    },
+    {
+      "path": "data/qa-fresh/test_http_and_hoard_wrapper_ma0/data/illustrations/3c25a03cfcfb4e4995f1737222b68ae7/project.vectorcraft",
+      "sha256": "6d05a620d84b611c52b4b672729635f84d53c8e6c41914bd388230bea26c3c7f",
+      "bytes": 25366
+    },
+    {
+      "path": "data/qa-fresh/test_file_snapshots_restore_un0/data/illustrations/9c19db2cffe947cd94d0835ccee818e2/project.vectorcraft",
+      "sha256": "1fde06443b5c077712869f1d71d2a504f89379293e4a907b3daa978386c4dc81",
+      "bytes": 25382
+    },
+    {
+      "path": "data/qa-fresh/test_faustus_stdio_mcp_lists_a0/data/illustrations/79e6cae9eaff4387be05aeecbeb47610/project.vectorcraft",
+      "sha256": "69fdb3cc8e0bd27c3cdea7246a9bfd4ee94184d7da8b4c170ca3e6c160f58297",
+      "bytes": 24096
+    },
+    {
+      "path": "data/qa-fresh/test_external_native_edit_surv0/data/illustrations/1da4be104c9a47689beb4b143a5f0955/project.vectorcraft",
+      "sha256": "65d344a9ae6c48c0e656bc1332a6d3841c2a284e7f41456998b4ec492f1d5221",
+      "bytes": 25368
+    },
+    {
+      "path": "data/qa-fresh/test_external_native_edit_surv0/data/illustrations/5897622313fc4cfcacd948c68e9bb477/project.vectorcraft",
+      "sha256": "65d344a9ae6c48c0e656bc1332a6d3841c2a284e7f41456998b4ec492f1d5221",
+      "bytes": 25368
+    },
+    {
+      "path": "data/qa-fresh/test_concurrent_first_calls_sh0/data/illustrations/d6d48db0bf2942beb0d926d875ea8a6d/project.vectorcraft",
+      "sha256": "2641b599846911c6bc56b52599c5d44d1a6a75f30ef68082fc5ab12c29b1bfee",
+      "bytes": 27829
+    },
+    {
+      "path": "data/qa-fresh/test_api_import_copies_source_0/data/illustrations/66232d1e236e48dfb2b097b26cc37486/project.vectorcraft",
+      "sha256": "c6f1b0f07d51f4dc8519584080d27aaae3c11ff3cafe2ea4265dd3e4534f16e7",
+      "bytes": 26947
+    },
+    {
+      "path": "data/qa-fresh/test_api_import_copies_source_0/data/illustrations/b6a2958742ab4f6cbe30755785a1dda2/project.vectorcraft",
+      "sha256": "8eff9e023cdfb5043a323e66996cb3e98c7ec84786c48bf9039b4587a4eb554f",
+      "bytes": 21630
+    }
+  ],
+  "limits": [
+    "Failure marking follows outer native is_error and nested SDK isError flags; no added argument/path restrictions.",
+    "HTTP change is scoped to project actions and illustration_native_call including the HoardLink wrapper.",
+    "Native failure details and subsequent successful save/inspect remain visible; a failed/timeout call does not imply rollback."
+  ]
+}

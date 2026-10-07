@@ -20,6 +20,16 @@ First requests for one project share a per-project async initialization lock, pr
 
 Undo/redo compares the resulting native file with the exact target snapshot. If VectorCraft's in-memory history produces a different file or errors, Dürer restores the snapshot, reopens it and returns a fresh native inspection. This covers edits made externally before reopening the project.
 
+MCP replies use `CallToolResult.isError=true` for unknown projects/tools,
+validation failures, native action/save/inspection failures, and exceptions.
+The existing JSON text is retained and object responses also expose the same
+payload as `structuredContent`, including complete native result arrays and
+timeout operation IDs. Native action failures return HTTP 502 through the
+project action endpoint and direct or HoardLink agent calls; successful actions
+remain HTTP 200. Inspect native results and any operation receipt before
+retrying: a failed action may be followed by a successful save/inspection,
+and an operation that timed out may still complete.
+
 ## Interchange and scope
 
 SVG, PNG, and PDF export are explicit native operations. Import support is offered for SVG, PNG, JPEG, WebP, and PDF; import behavior depends on VectorCraft's open/import handling. Source copies remain available even if the editor changes or converts its working document. `hoard://durer/illustration/{id}` identifies the persistent Hoard record; the API returns this stable reference.

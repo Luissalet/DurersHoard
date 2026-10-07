@@ -7,9 +7,9 @@ from typing import Any
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import TextContent, Tool
+from mcp.types import CallToolResult, TextContent, Tool
 
-from .native import catalog
+from .native import catalog, failed_results
 from .history import execute as history_execute
 from .sessions import sessions
 from . import store
@@ -18,8 +18,14 @@ from .config import settings
 server = Server("durer-hoard")
 
 
-def _text(value: Any):
-    return [TextContent(type="text", text=json.dumps(value, ensure_ascii=False, default=str))]
+def _text(value: Any, *, is_error: bool = False) -> CallToolResult:
+    if isinstance(value, dict):
+        is_error = is_error or failed_results(value.get("results", []))
+    return CallToolResult(
+        content=[TextContent(type="text", text=json.dumps(value, ensure_ascii=False, default=str))],
+        structuredContent=value if isinstance(value, dict) else None,
+        isError=is_error,
+    )
 
 
 @server.list_tools()
@@ -67,10 +73,12 @@ async def call_tool(name: str, arguments: dict[str, Any]):
             fmt = str(arguments["format"])
             target = root / "exports" / f"{project_id}-{uuid.uuid4().hex}.{fmt}"
             result = sessions.execute(project_id, root / "project.vectorcraft", [{"name": "export", "arguments": {"format": fmt, "path": str(target)}}])
-            if any(row.get("name") == "export" and row.get("is_error") for row in result):
-                raise RuntimeError("VectorCraft reported an export error")
+            if failed_results(result):
+                return _text({"path": str(target), "exists": target.is_file(), "results": result,
+                              "error": "VectorCraft reported an export error"}, is_error=True)
             if not target.is_file() or target.stat().st_size == 0:
-                raise RuntimeError("Native export did not produce a new file")
+                return _text({"path": str(target), "exists": False, "results": result,
+                              "error": "Native export did not produce a new file"}, is_error=True)
             return _text({"path": str(target), "exists": target.is_file(), "results": result})
         if name == "illustration_native_call":
             tool, args = str(arguments["tool"]), arguments["arguments"]
@@ -88,7 +96,7 @@ async def call_tool(name: str, arguments: dict[str, Any]):
         results = history_execute(project_id, root / "project.vectorcraft", [{"name": tool, "arguments": args}])
         return _text({"illustration": store.read(project_id), "results": results})
     except Exception as exc:
-        return [TextContent(type="text", text=json.dumps({"error": str(exc)}, ensure_ascii=False), annotations=None)]
+        return _text({"error": str(exc)}, is_error=True)
 
 
 async def main():

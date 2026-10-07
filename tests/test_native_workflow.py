@@ -315,3 +315,105 @@ def test_faustus_stdio_mcp_lists_and_dispatches_complete_native_tools(isolated):
                 assert len(full["tools"]) == 25 and len(full["commands"]) == 659
 
     asyncio.run(exercise())
+
+
+def test_real_stdio_marks_failures_and_preserves_native_details(isolated):
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+
+    async def exercise():
+        env = dict(os.environ)
+        env["DURER_DATA_DIR"] = str(isolated)
+        env["DURER_VECTORCRAFT_CLI"] = str(CLI)
+        params = StdioServerParameters(command=sys.executable, args=["-m", "durer_hoard.mcp_server"], env=env)
+        evidence = []
+        async with stdio_client(params) as (read, write):
+            async with ClientSession(read, write) as client:
+                await client.initialize()
+                created = await client.call_tool("illustration_create", {"title": "MCP failure and recovery verification"})
+                assert created.isError is False
+                payload = json.loads(created.content[0].text)
+                assert created.structuredContent == payload
+                project_id = payload["illustration"]["id"]
+                cases = [
+                    ("unknown_project", "illustration_inspect", {"project_id": "f" * 32}, True),
+                    ("unknown_native_tool", "illustration_native_call", {"project_id": project_id, "tool": "does_not_exist", "arguments": {}}, True),
+                    ("bad_native_arguments", "illustration_native_call", {"project_id": project_id, "tool": "draw_shape", "arguments": {}}, True),
+                    ("undo_without_changes", "vectorcraft_undo", {"project_id": project_id}, True),
+                    ("native_success", "illustration_native_call", {"project_id": project_id, "tool": "draw_shape", "arguments": {
+                        "shape": "rectangle", "x": 10, "y": 20, "width": 50, "height": 30, "fill": "#123456"}}, False),
+                    ("inspect_success", "illustration_inspect", {"project_id": project_id}, False),
+                    ("export_success", "illustration_export", {"project_id": project_id, "format": "svg"}, False),
+                ]
+                for case, tool, arguments, expected in cases:
+                    result = await client.call_tool(tool, arguments)
+                    body = json.loads(result.content[0].text)
+                    assert result.isError is expected, (case, body)
+                    assert result.structuredContent == body
+                    if case == "bad_native_arguments":
+                        assert body["results"][0]["name"] == "draw_shape"
+                        assert body["results"][0]["is_error"] is True
+                        assert body["results"][0]["result"]["isError"] is True
+                        assert body["results"][0]["result"]["content"][0]["text"]
+                        assert body["results"][-1]["name"] == "inspect_document"
+                    if case == "export_success":
+                        assert Path(body["path"]).is_file()
+                    evidence.append({"case": case, "outer_is_error": result.isError, "payload": body})
+        output = os.environ.get("DURER_MCP_ERROR_EVIDENCE")
+        if output:
+            directory = Path(output)
+            directory.mkdir(parents=True, exist_ok=True)
+            (directory / "mcp-fixed.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
+
+    asyncio.run(exercise())
+
+
+def test_http_and_hoard_wrapper_mark_native_failure_and_recover(isolated):
+    from durer_hoard.api import app
+    with TestClient(app, base_url="http://127.0.0.1:5222") as client:
+        token = (isolated / "mcp-token").read_text(encoding="utf-8").strip()
+        headers = {"Authorization": "Bearer " + token}
+        created = client.post("/api/agent/call", headers=headers, json={
+            "name": "illustration_create", "arguments": {"title": "HTTP error recovery"}})
+        assert created.status_code == 200
+        project_id = created.json()["illustration"]["id"]
+        evidence = []
+        for case, url, body in [
+            ("ui_actions", f"/api/illustrations/{project_id}/actions", {"actions": [{"name": "draw_shape", "arguments": {}}]}),
+            ("agent_native", "/api/agent/illustration_native_call", {"project_id": project_id, "tool": "draw_shape", "arguments": {}}),
+            ("hoard_wrapper", "/api/agent/call", {"name": "illustration_native_call", "arguments": {"project_id": project_id, "tool": "draw_shape", "arguments": {}}}),
+        ]:
+            failed = client.post(url, headers=headers, json=body)
+            assert failed.status_code == 502, failed.text
+            assert failed.json()["results"][0]["is_error"] is True
+            assert failed.json()["results"][0]["result"]["content"][0]["text"]
+            evidence.append({"case": case, "http_status": failed.status_code, "payload": failed.json()})
+        recovered = client.post("/api/agent/call", headers=headers, json={
+            "name": "illustration_native_call", "arguments": {"project_id": project_id, "tool": "draw_shape", "arguments": {
+                "shape": "ellipse", "x": 15, "y": 25, "width": 80, "height": 60, "fill": "#345678"}}})
+        assert recovered.status_code == 200 and not recovered.json()["results"][0]["is_error"]
+        evidence.append({"case": "hoard_recovered", "http_status": recovered.status_code, "payload": recovered.json()})
+        output = os.environ.get("DURER_MCP_ERROR_EVIDENCE")
+        if output:
+            directory = Path(output)
+            directory.mkdir(parents=True, exist_ok=True)
+            (directory / "http-fixed.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
+
+
+def test_mcp_export_details_and_timeout_operation_receipt_are_retained(isolated, monkeypatch):
+    from durer_hoard import store
+    from durer_hoard.mcp_server import call_tool
+    from durer_hoard.sessions import sessions
+    item = store.create("Failure payload retention")
+    native = [{"name": "export", "is_error": True, "result": {"isError": True, "content": [{"type": "text", "text": "native export validation failure"}]}}]
+    monkeypatch.setattr(sessions, "execute", lambda *args: native)
+    failed = asyncio.run(call_tool("illustration_export", {"project_id": item["id"], "format": "png"}))
+    assert failed.isError is True
+    assert failed.structuredContent["results"] == native
+    message = "VectorCraft operation abcdef exceeded 1s; it may still complete. Check /api/operations/abcdef before retrying."
+    def timeout(*args):
+        raise TimeoutError(message)
+    monkeypatch.setattr(sessions, "execute", timeout)
+    pending = asyncio.run(call_tool("illustration_inspect", {"project_id": item["id"]}))
+    assert pending.isError is True
+    assert pending.structuredContent["error"] == message

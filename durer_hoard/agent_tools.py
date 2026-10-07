@@ -6,12 +6,13 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from . import store
 from .config import settings
 from .history import execute as history_execute
-from .native import catalog
+from .native import catalog, failed_results
 from .sessions import sessions
 
 router = APIRouter(prefix="/api/agent")
@@ -75,7 +76,8 @@ def illustration_native_call(payload: NativeCall):
     if payload.tool not in names:
         raise HTTPException(400, "Tool name is absent from the current native catalog")
     results = history_execute(item["id"], root / "project.vectorcraft", [{"name": payload.tool, "arguments": payload.arguments}])
-    return {"illustration": store.read(item["id"]), "results": results}
+    result = {"illustration": store.read(item["id"]), "results": results}
+    return JSONResponse(result, status_code=502) if failed_results(results) else result
 
 
 @router.post("/illustration_export")
