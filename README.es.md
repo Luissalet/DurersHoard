@@ -20,6 +20,20 @@ El editor conserva un proceso MCP de VectorCraft por proyecto activo; así undo 
 
 Ejecuta `.venv/Scripts/python.exe -m durer_hoard.mcp_server` por stdio. `vectorcraft_catalog` devuelve el catálogo completo. `vectorcraft_<herramienta>` reenvía cada herramienta nativa dentro de una sesión persistente; `illustration_native_call` permite la misma ejecución por nombre. `run_command` sigue disponible como herramienta nativa con el esquema proporcionado por VectorCraft.
 
+## Copiloto de Faustus
+
+Todas las páginas tienen un botón flotante **Faustus** que abre un panel lateral con el chat de Faustus. El agente ve la ilustración que tienes abierta y los objetos seleccionados en el inspector, y trabaja sobre ellos con las mismas herramientas nativas de VectorCraft a las que Faustus ya llega por el puente MCP. La conversación, el modelo, las herramientas y la memoria viven en Faustus; Dürer no guarda ningún bucle de chat ni historial.
+
+Lo que el panel envía en cada turno (`window.hoardCopilot.context()` en [`durer_hoard/static/copilot.js`](durer_hoard/static/copilot.js)):
+
+- `project`: la ilustración abierta (`external_project_id` = id de la ilustración, `title`). Una conversación por ilustración; la biblioteca no tiene ninguna.
+- `active_objects`: la ilustración (`kind: "illustration"`: id, título, referencia `hoard://`, número de objetos, mesas de trabajo y sus objetos con id / tipo / nombre / padre, hasta 60) y un `kind: "object"` por cada objeto seleccionado (id, nombre, tipo, relleno, trazo y ancho de trazo tal como los informa el motor). Se lee del motor con `inspect_document` en el momento del turno, así que un cambio anterior del agente ya está dentro. En la biblioteca, o con una ilustración que ya no existe, es `[]`.
+- `view.editor`: un diálogo Nueva / Importar / Texto abierto (`new_illustration`, `import_illustration`, `add_text`: nombre y tamaño del lienzo escritos hasta ahora) o valores de transformación escritos y no aplicados (`transform`).
+
+Al terminar un turno el editor vuelve a leer la ilustración, su vista previa, la lista de objetos y la biblioteca, quita una selección que ya no existe, cierra una ilustración que el agente haya borrado y devuelve a los campos de pintura y transformación lo que tenías escrito.
+
+El relé es `install_copilot` de Hoard Link (`hoard_link.copilot`), llamado desde `durer_hoard/api.py`; añade estas rutas (véase [`docs/API.md`](docs/API.md)) y el script del lanzador a cada página HTML. Necesita un Hoard Link que lo incluya y `httpx` (ahora es dependencia); con un Hoard Link anterior la app arranca como antes y `/api/health` dice `"copilot": false`. Faustus se encuentra con `HOARD_FAUSTUS_URL` (más `HOARD_FAUSTUS_TOKEN`) o con la configuración de Hoard Link, y si no, `127.0.0.1:7000` / `7001`. **Para desactivarlo** arranca la app con `HOARD_COPILOT=0`: sin rutas, sin botón y sin nada inyectado. `faustus-plugin.json` lo declara en `x-family.copilot`.
+
 ## Evidencia y límites
 
 La versión local verificada es VectorCraft 0.3.1. Su CLI declara 659 comandos y el catálogo MCP contiene 25 herramientas. Dürer's Hoard delega dibujo, selección, pintura, transformaciones, texto, Pathfinder, undo, redo y exportación en VectorCraft. La interfaz es un espacio de trabajo alrededor del motor, no una sustitución de su escritorio completo. No se afirma paridad ni ventaja de rendimiento frente a VectorCraft, Inkscape o Penpot. Consulta `docs/CREATIVE-ENGINES.es.md` y `docs/DISEÑO.md` para límites y evaluación.

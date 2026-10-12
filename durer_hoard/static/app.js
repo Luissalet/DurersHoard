@@ -69,3 +69,8 @@ $$('[data-tool]').forEach(b=>b.onclick=()=>{$$('.tool').forEach(x=>x.classList.r
 $('#applyTransform').onclick=()=>{if(!selectedIds.length){toast(lang==='es'?'Selecciona primero un objeto':'Select an object first');return}let args={ids:selectedIds,dx:Number($('#moveX').value)||0,dy:Number($('#moveY').value)||0,scale:(Number($('#scaleValue').value)||100)/100,rotate:Number($('#rotationValue').value)||0};actions([{name:'transform',arguments:args}])};
 $('#openNative').onclick=async()=>{if(!current)return;toast(lang==='es'?'Abriendo VectorCraft…':'Opening VectorCraft…');try{await req('/api/illustrations/'+current.id+'/open-gui',{method:'POST'});toast(lang==='es'?'Proyecto abierto en VectorCraft':'Project opened in VectorCraft')}catch(e){toast(e.message)}};
 $('#downloadNative').onclick=()=>{if(!current)return;let a=document.createElement('a');a.href='/api/illustrations/'+current.id+'/native';a.download=current.id+'.vectorcraft';a.click()};
+// The Faustus copilot (copilot.js) reads the editor's state and refreshes it after a turn through this one door.
+globalThis.__durerCopilot={state:()=>({current,selectedIds,lastDocument,inputPurpose}),
+  async refresh(){await refresh();await inspect();const missing=selectedIds.filter(id=>!(lastDocument&&objectById(lastDocument.layers,id)));if(missing.length){selectedIds=selectedIds.filter(id=>!missing.includes(id));reflectObjectProperties(null);await inspect()}},
+  projects:()=>projects(),
+  closeIllustration(){current=null;selectedIds=[];lastDocument=null;visible(false);projects()}};

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import mimetypes
+import os
 import re
 import shutil
 import uuid
@@ -51,6 +53,17 @@ if hoard_family:
 if hoard_guard:
     hoard_guard.install_guard(app, port_getter=lambda: settings().port)
 
+COPILOT_INSTALLED = False
+if hoard_family and os.environ.get("HOARD_COPILOT", "1").strip().lower() not in ("0", "false", "no", "off"):
+    # The Faustus copilot: a floating button and side panel on every page, relayed through this app (Hoard Link's
+    # install_copilot). A Hoard Link without it, or without httpx, leaves the app as it was.
+    try:
+        from hoard_link.copilot import install_copilot
+        install_copilot(app, "durer", str(settings().data_dir), app_name="Dürer's Hoard")
+        COPILOT_INSTALLED = True
+    except Exception:  # noqa: BLE001 - the copilot is an addition, never a reason for the editor not to start
+        logging.getLogger("durer_hoard").warning("Faustus copilot not installed", exc_info=True)
+
 
 class CreateRequest(BaseModel):
     title: str = Field(min_length=1, max_length=160)
@@ -86,7 +99,7 @@ def index():
 def health():
     configured = settings().vectorcraft_cli
     gui = settings().vectorcraft_gui
-    return {"ok": True, "service": "durers-hoard", "hoard_link": HOARDLINK_AVAILABLE,
+    return {"ok": True, "service": "durers-hoard", "hoard_link": HOARDLINK_AVAILABLE, "copilot": COPILOT_INSTALLED,
             "engine_configured": bool(configured and configured.is_file()),
             "gui_configured": bool(gui and gui.is_file()),
             "engine_path": str(configured) if configured else None, "data_dir": str(settings().data_dir),
