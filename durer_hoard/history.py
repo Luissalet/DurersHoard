@@ -11,7 +11,7 @@ from pathlib import Path
 from .sessions import sessions
 from . import store
 
-READ_ONLY = {"inspect_document", "inspect_ui", "screenshot", "list_commands"}
+READ_ONLY = {"inspect_document", "inspect_ui", "screenshot", "list_commands", "export"}
 _locks: dict[str, threading.RLock] = {}
 _locks_guard = threading.Lock()
 

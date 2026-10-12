@@ -81,12 +81,12 @@
       return { kind: kind, dirty: value !== '', fields: fields };
     }
     if (inWorkspace === false) return null;      // the transform fields live in the workspace: hidden in the library
-    var typed = {};
+    var typed = Object.assign({}, form.paint || {});
     Object.keys(TRANSFORM_DEFAULTS).forEach(function (id) {
       var v = form.transform && form.transform[id];
       if (v != null && String(v).trim() !== '' && String(v).trim() !== TRANSFORM_DEFAULTS[id]) typed[id] = String(v).trim();
     });
-    return Object.keys(typed).length ? { kind: 'transform', dirty: true, fields: typed } : null;
+    return Object.keys(typed).length ? { kind: form.paint && Object.keys(form.paint).length ? 'paint' : 'transform', dirty: true, fields: typed } : null;
   }
 
   /**
@@ -145,6 +145,13 @@
     var transform = {};
     Object.keys(TRANSFORM_DEFAULTS).forEach(function (id) { if ($(id)) transform[id] = $(id).value; });
     var out = { transform: transform };
+    out.paint = {};
+    ['fillColor', 'strokeColor', 'strokeWidth'].forEach(function (id) {
+      var input = $(id);
+      if (input && input.dataset && input.dataset.reported === 'true' && input.value !== input.dataset.documentValue) {
+        out.paint[id === 'fillColor' ? 'fill' : id === 'strokeColor' ? 'stroke' : id] = input.value;
+      }
+    });
     if (modal && !modal.classList.contains('hidden')) {
       out.dialog = { open: true, purpose: s.inputPurpose, value: $('inputValue') && $('inputValue').value,
                      width: $('canvasWidth') && $('canvasWidth').value, height: $('canvasHeight') && $('canvasHeight').value,
@@ -161,13 +168,14 @@
   async function context() {
     try {
       var s = app() && app().state();
+      var form = s && formState(s), openCatalog = catalogOpen();
       if (!s || !s.current || !s.current.id) return buildContext({ form: s && formState(s), catalogOpen: catalogOpen() });
       var meta = null, doc = s.lastDocument || null;
       try { meta = await readJson('/api/illustrations/' + encodeURIComponent(s.current.id)); } catch (e) { meta = s.current; }
-      if (meta && meta.gone) return buildContext({ form: formState(s), catalogOpen: catalogOpen() });
+      if (meta && meta.gone) return buildContext({ form: form, catalogOpen: openCatalog });
       try { doc = (await inspectDocument(s.current.id)) || doc; } catch (e) { /* the engine may be busy: use the last inspection */ }
       var current = Object.assign({}, s.current, meta && meta.id ? { title: meta.title || s.current.title } : {});
-      return buildContext({ current: current, selectedIds: s.selectedIds, doc: doc, form: formState(s), catalogOpen: catalogOpen() });
+      return buildContext({ current: current, selectedIds: s.selectedIds, doc: doc, form: form, catalogOpen: openCatalog });
     } catch (e) {
       return { active_objects: [], view: { page: 'library' } };
     }
@@ -178,20 +186,17 @@
     var hooks = app();
     if (running || !hooks) return;
     running = true;
-    var $ = function (id) { return root.document.getElementById(id); };
-    var ids = ['fillColor', 'strokeColor', 'strokeWidth', 'moveX', 'moveY', 'scaleValue', 'rotationValue', 'inputValue', 'canvasWidth', 'canvasHeight', 'canvasUnits'];
-    var typed = {};
-    ids.forEach(function (id) { if ($(id)) typed[id] = $(id).value; });
     try {
       var s = hooks.state();
       if (s.current && s.current.id) {
         var meta = await readJson('/api/illustrations/' + encodeURIComponent(s.current.id));
-        if (meta && meta.gone) hooks.closeIllustration();      // the agent deleted the open illustration
-        else { await hooks.refresh(); }
+        if (hooks.state().current && hooks.state().current.id === s.current.id) {
+          if (meta && meta.gone) hooks.closeIllustration();      // the agent deleted the open illustration
+          else { await hooks.refresh(); }
+        }
       }
       await hooks.projects();
     } catch (e) { /* the panel must never break the editor */ } finally {
-      ids.forEach(function (id) { if ($(id) && $(id).value !== typed[id]) $(id).value = typed[id]; });
       running = false;
     }
   }

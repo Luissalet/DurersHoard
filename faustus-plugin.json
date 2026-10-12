@@ -44,6 +44,7 @@
     "cwd": "{DURER_DIR}",
     "env": {
       "DURER_CONFIG": "{DURER_DIR}/local-config.json",
+      "DURER_URL": "{APP_URL}",
       "HOARD_APP_ID": "durer"
     },
     "optional_env": ["HOARD_HUB_URL"]

@@ -22,13 +22,15 @@ Run `.venv/Scripts/python.exe -m durer_hoard.mcp_server` over stdio. `vectorcraf
 
 ## Faustus copilot
 
+When the app is running, the MCP bridge uses its live native sessions through the existing API. `DURER_URL` selects the app endpoint (otherwise the configured host/port); its data directory must match the bridge's configured data directory. With the app offline, standalone MCP remains available. A sent request with no reply reports `outcome_unknown` and is never replayed in another engine. Preview/export read the document without resaving it. Fields typed while a turn-end refresh is pending stay in the editor; untouched paint fields follow the native document.
+
 Every page has a floating **Faustus** button that opens a side panel with the Faustus chat. The agent sees the illustration you have open and the objects selected in the inspector, and works on them with the same native VectorCraft tools Faustus already reaches through the MCP bridge. Conversation, model, tools and memory live in Faustus; Dürer keeps no chat loop and no history.
 
 What the panel sends with every turn (`window.hoardCopilot.context()` in [`durer_hoard/static/copilot.js`](durer_hoard/static/copilot.js)):
 
 - `project`: the open illustration (`external_project_id` = illustration id, `title`). One conversation per illustration; the library has none.
 - `active_objects`: the illustration (`kind: "illustration"`: id, title, `hoard://` reference, object count, artboards, and its objects as id / kind / name / parent, capped at 60) and one `kind: "object"` per selected object (id, name, kind, fill, stroke, stroke width as the engine reports them). It is read from the engine with `inspect_document` at the moment of the turn, so what an agent changed earlier is already in it. In the library, or for an illustration that no longer exists, it is `[]`.
-- `view.editor`: a New / Import / Text dialog that is open (`new_illustration`, `import_illustration`, `add_text`: name and canvas size typed so far) or transform values typed but not applied (`transform`).
+- `view.editor`: a New / Import / Text dialog that is open (`new_illustration`, `import_illustration`, `add_text`: name and canvas size typed so far), transform values typed but not applied (`transform`), or changed paint fields (`paint`).
 
 When a turn ends the editor re-reads the illustration, its preview and object list, and the library, drops a selection that no longer exists, closes an illustration the agent deleted, and puts back what you had typed in the paint and transform fields.
 

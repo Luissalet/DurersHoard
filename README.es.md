@@ -22,13 +22,15 @@ Ejecuta `.venv/Scripts/python.exe -m durer_hoard.mcp_server` por stdio. `vectorc
 
 ## Copiloto de Faustus
 
+Cuando la app está abierta, el puente MCP usa sus sesiones nativas vivas por el API existente. `DURER_URL` elige el endpoint (si no, host/puerto configurado) y la carpeta de datos debe coincidir con la del puente. Con la app apagada sigue disponible el MCP independiente. Una petición enviada sin respuesta devuelve `outcome_unknown` y no se repite en otro motor. La vista previa y la exportación leen el documento sin volver a guardarlo. Los campos escritos mientras llega el refresco se conservan; la pintura no modificada sigue los valores nativos.
+
 Todas las páginas tienen un botón flotante **Faustus** que abre un panel lateral con el chat de Faustus. El agente ve la ilustración que tienes abierta y los objetos seleccionados en el inspector, y trabaja sobre ellos con las mismas herramientas nativas de VectorCraft a las que Faustus ya llega por el puente MCP. La conversación, el modelo, las herramientas y la memoria viven en Faustus; Dürer no guarda ningún bucle de chat ni historial.
 
 Lo que el panel envía en cada turno (`window.hoardCopilot.context()` en [`durer_hoard/static/copilot.js`](durer_hoard/static/copilot.js)):
 
 - `project`: la ilustración abierta (`external_project_id` = id de la ilustración, `title`). Una conversación por ilustración; la biblioteca no tiene ninguna.
 - `active_objects`: la ilustración (`kind: "illustration"`: id, título, referencia `hoard://`, número de objetos, mesas de trabajo y sus objetos con id / tipo / nombre / padre, hasta 60) y un `kind: "object"` por cada objeto seleccionado (id, nombre, tipo, relleno, trazo y ancho de trazo tal como los informa el motor). Se lee del motor con `inspect_document` en el momento del turno, así que un cambio anterior del agente ya está dentro. En la biblioteca, o con una ilustración que ya no existe, es `[]`.
-- `view.editor`: un diálogo Nueva / Importar / Texto abierto (`new_illustration`, `import_illustration`, `add_text`: nombre y tamaño del lienzo escritos hasta ahora) o valores de transformación escritos y no aplicados (`transform`).
+- `view.editor`: un diálogo Nueva / Importar / Texto abierto (`new_illustration`, `import_illustration`, `add_text`: nombre y tamaño del lienzo escritos hasta ahora), valores de transformación escritos y no aplicados (`transform`) o campos de pintura modificados (`paint`).
 
 Al terminar un turno el editor vuelve a leer la ilustración, su vista previa, la lista de objetos y la biblioteca, quita una selección que ya no existe, cierra una ilustración que el agente haya borrado y devuelve a los campos de pintura y transformación lo que tenías escrito.
 

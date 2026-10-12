@@ -403,6 +403,87 @@ def test_faustus_stdio_mcp_lists_and_dispatches_complete_native_tools(isolated):
     asyncio.run(exercise())
 
 
+def test_live_mcp_edit_survives_api_preview_and_fresh_process(isolated, monkeypatch):
+    import socket
+    import threading
+    import urllib.request
+    import uvicorn
+    from durer_hoard.api import app
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+
+    sock = socket.socket()
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+    base = f"http://127.0.0.1:{port}"
+    monkeypatch.setenv("DURER_PORT", str(port))
+    monkeypatch.setenv("DURER_URL", base)
+    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error"))
+    thread = threading.Thread(target=lambda: server.run(sockets=[sock]), daemon=True)
+    thread.start()
+    deadline = time.monotonic() + 10
+    while not server.started and time.monotonic() < deadline:
+        time.sleep(0.02)
+    assert server.started
+
+    def api(path, body=None):
+        request = urllib.request.Request(base + path, data=json.dumps(body).encode() if body is not None else None,
+                                         headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(request, timeout=20) as response:
+            return response.read()
+
+    def doc(value):
+        row = next(row for row in value["results"] if row["name"] == "inspect_document")
+        return json.loads(row["result"]["content"][0]["text"])
+
+    async def exercise():
+        env = dict(os.environ)
+        params = StdioServerParameters(command=sys.executable, args=["-m", "durer_hoard.mcp_server"], env=env)
+        async with stdio_client(params) as (read, write):
+            async with ClientSession(read, write) as client:
+                await client.initialize()
+                created = await client.call_tool("illustration_create", {"title": "Live API and MCP"})
+                assert not created.isError
+                item = json.loads(created.content[0].text)["illustration"]
+                project = item["id"]
+                path = Path(item["project_file"])
+                # Prime the API's persistent engine, then edit through the stdio tool.
+                assert doc(json.loads(api(f"/api/illustrations/{project}/actions", {"actions": [{"name": "inspect_document", "arguments": {}}]})))["objects"] == 1
+                result = await client.call_tool("vectorcraft_draw_shape", {"project_id": project, "shape": "ellipse",
+                    "x": 20, "y": 30, "width": 80, "height": 60, "fill": "#0088ff"})
+                assert not result.isError
+                assert doc(json.loads(result.content[0].text))["objects"] == 2
+                durable = hashlib.sha256(path.read_bytes()).hexdigest()
+                assert api(f"/api/illustrations/{project}/preview").startswith(b"\x89PNG")
+                assert hashlib.sha256(path.read_bytes()).hexdigest() == durable
+                current = doc(json.loads(api(f"/api/illustrations/{project}/actions", {"actions": [{"name": "inspect_document", "arguments": {}}]})))
+                assert current["objects"] == 2
+                assert "Ellipse" in json.dumps(current["layers"])
+                # HTTP and MCP preserve each other's subsequent edits, including native failures.
+                api(f"/api/illustrations/{project}/actions", {"actions": [{"name": "draw_shape", "arguments": {
+                    "shape": "rectangle", "x": 100, "y": 30, "width": 20, "height": 20}}]})
+                latest = await client.call_tool("illustration_inspect", {"project_id": project})
+                assert doc(json.loads(latest.content[0].text))["objects"] == 3
+                bad = await client.call_tool("illustration_native_call", {"project_id": project, "tool": "draw_shape", "arguments": {}})
+                assert bad.isError and json.loads(bad.content[0].text)["results"][0]["is_error"]
+        env["DURER_URL"] = "http://127.0.0.1:1"  # A fresh standalone engine reads the durable file.
+        params.env = env
+        async with stdio_client(params) as (read, write):
+            async with ClientSession(read, write) as client:
+                await client.initialize()
+                latest = await client.call_tool("illustration_inspect", {"project_id": project})
+                assert not latest.isError
+                assert doc(json.loads(latest.content[0].text))["objects"] == 3
+
+    try:
+        asyncio.run(exercise())
+    finally:
+        server.should_exit = True
+        thread.join(timeout=25)
+        sock.close()
+        assert not thread.is_alive()
+
+
 def test_real_stdio_marks_failures_and_preserves_native_details(isolated):
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client

@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import json
+import os
 import uuid
+from pathlib import Path
 from typing import Any
 
+import httpx
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import CallToolResult, TextContent, Tool
@@ -16,6 +19,40 @@ from . import store
 from .config import settings
 
 server = Server("durer-hoard")
+
+
+async def _running_app_call(name: str, arguments: dict[str, Any]):
+    """Use the app's live native sessions; an offline app keeps standalone MCP."""
+    config = settings()
+    base = os.environ.get("DURER_URL") or f"http://{config.host}:{config.port}"
+    async with httpx.AsyncClient(timeout=180, trust_env=False) as client:
+        try:
+            health = await client.get(base.rstrip("/") + "/api/health", timeout=2)
+        except httpx.RequestError:
+            return None
+        if not health.is_success:
+            return None
+        status = health.json()
+        if status.get("service") != "durers-hoard" or not status.get("data_dir"):
+            return None
+        if Path(status["data_dir"]).resolve() != config.data_dir:
+            return None  # Another data folder must never receive this bridge's edits.
+        tool, args = name, arguments
+        if name.startswith("vectorcraft_") and name != "vectorcraft_catalog":
+            tool = "illustration_native_call"
+            args = {"project_id": arguments.get("project_id", ""), "tool": name[len("vectorcraft_"):],
+                    "arguments": {key: value for key, value in arguments.items() if key != "project_id"}}
+        token_path = Path(os.environ.get("DURER_TOKEN_FILE") or config.data_dir / "mcp-token")
+        token = os.environ.get("DURER_TOKEN") or token_path.read_text(encoding="utf-8").strip()
+        try:
+            response = await client.post(base.rstrip("/") + "/api/agent/call",
+                                         headers={"Authorization": "Bearer " + token},
+                                         json={"name": tool, "arguments": args})
+        except httpx.RequestError as exc:
+            # The POST may already have edited the document. Do not run it again in another session.
+            return _text({"error": str(exc), "outcome_unknown": True,
+                          "hint": "Read the current illustration before retrying."}, is_error=True)
+        return _text(response.json(), is_error=not response.is_success)
 
 
 def _text(value: Any, *, is_error: bool = False) -> CallToolResult:
@@ -54,6 +91,9 @@ async def list_tools():
 @server.call_tool()
 async def call_tool(name: str, arguments: dict[str, Any]):
     try:
+        proxied = await _running_app_call(name, arguments)
+        if proxied is not None:
+            return proxied
         if name == "vectorcraft_catalog":
             return _text(catalog())
         if name == "illustration_list":

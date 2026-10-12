@@ -31,5 +31,7 @@ Mounted by Hoard Link's `install_copilot` from `durer_hoard/api.py`; absent with
 | `GET /api/copilot/launcher.js` | the floating button and side panel script, added to every HTML page the app serves |
 
 The page side is `window.hoardCopilot` (`durer_hoard/static/copilot.js`): `context(base)` returns `project`, `active_objects`
-(the open illustration and the selected objects, read with `inspect_document`) and `view.editor` (a half filled dialog or
-transform values not yet applied); `onTurnEnd(detail)` re-reads the illustration, objects and library.
+(the open illustration and the selected objects, read with `inspect_document`) and `view.editor` (a half filled dialog,
+changed paint fields or transform values not yet applied); `onTurnEnd(detail)` re-reads the illustration, objects and library.
+
+The stdio MCP bridge sends calls to `/api/agent/call` when the app is reachable at `DURER_URL` (or the configured host/port) with the same data directory. The existing API tools dispatch the full native catalog through `illustration_native_call`; the 31 MCP tool names/schemas stay available. Offline calls keep the standalone engine. Once a POST is sent, a lost reply reports `outcome_unknown` rather than retrying locally. Preview/export do not save the source document. Refresh keeps edits made while its requests are pending and updates only untouched paint fields.

@@ -14,7 +14,7 @@ from mcp.client.stdio import stdio_client
 
 from .native import environment, executable, serial
 
-READ_ONLY = {"inspect_document", "inspect_ui", "screenshot", "list_commands"}
+READ_ONLY = {"inspect_document", "inspect_ui", "screenshot", "list_commands", "export"}
 
 
 class _Session:
@@ -143,9 +143,8 @@ class NativeSessions:
                                     if result.isError:
                                         break
                                 needs_save = any(
-                                    action.get("kind", "tool") == "tool"
-                                    and str(action.get("name", "")) not in READ_ONLY
-                                    for action in actions
+                                    not row["is_error"] and row["name"] not in READ_ONLY
+                                    for row in results
                                 )
                                 if needs_save and (not results or results[-1].get("name") != "save_file"):
                                     saved = await client.call_tool("save_file", {"path": str(path)})

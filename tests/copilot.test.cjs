@@ -101,7 +101,7 @@ function page({ state, routes = {} }) {
       calls.push(`${options.method || 'GET'} ${url}`);
       const handler = routes[`${options.method || 'GET'} ${url}`] || routes[url];
       if (!handler) throw new Error('unexpected ' + url);
-      const out = typeof handler === 'function' ? handler(options) : handler;
+      const out = typeof handler === 'function' ? await handler(options) : handler;
       return { ok: out.status === undefined || out.status < 400, status: out.status ?? 200, json: async () => out.body };
     },
     Event: class { constructor(type) { this.type = type; } },
@@ -109,7 +109,7 @@ function page({ state, routes = {} }) {
     __durerCopilot: {
       state: () => state,
       refreshed: 0, projectsCalled: 0, closed: 0,
-      async refresh() { this.refreshed += 1; values.fillColor = '#ffffff'; },
+      async refresh() { this.refreshed += 1; },
       async projects() { this.projectsCalled += 1; },
       closeIllustration() { this.closed += 1; },
     },
@@ -176,8 +176,38 @@ test('onTurnEnd refreshes once and keeps what is typed', async () => {
   await new Promise((resolve) => setTimeout(resolve, 400));
   assert.equal(win.__durerCopilot.refreshed, 1);
   assert.equal(win.__durerCopilot.projectsCalled, 1);
-  assert.equal(values.fillColor, '#123456', 'the refresh set #ffffff; what was typed is put back');
+  assert.equal(values.fillColor, '#123456');
   assert.equal(values.moveX, '7');
+});
+
+test('typing while the turn-end library request is pending is kept', async () => {
+  const { win, values } = page({ state: { current: CURRENT, selectedIds: [], lastDocument: DOC }, routes: { '/api/illustrations/ill_01': { body: CURRENT } } });
+  let finish, started;
+  const waiting = new Promise((resolve) => { started = resolve; });
+  win.__durerCopilot.projects = () => new Promise((resolve) => { finish = resolve; started(); });
+  win.hoardCopilot.onTurnEnd({});
+  await waiting;
+  values.moveX = '28';
+  values.inputValue = 'typed during reload';
+  finish();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(values.moveX, '28');
+  assert.equal(values.inputValue, 'typed during reload');
+});
+
+test('a context read keeps the form snapshot from before its native reads', async () => {
+  let finish, started;
+  const waiting = new Promise((resolve) => { started = resolve; });
+  const { win, values } = page({ state: { current: CURRENT, selectedIds: [], lastDocument: DOC }, routes: {
+    '/api/illustrations/ill_01': () => new Promise((resolve) => { finish = () => resolve({ body: CURRENT }); started(); }),
+    'POST /api/illustrations/ill_01/actions': inspectRoute(DOC),
+  } });
+  const pending = win.hoardCopilot.context();
+  await waiting;
+  values.moveX = '42';
+  finish();
+  const ctx = await pending;
+  assert.equal(ctx.view.editor.fields.moveX, '7');
 });
 
 test('onTurnEnd closes an illustration the agent deleted', async () => {
