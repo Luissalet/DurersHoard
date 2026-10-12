@@ -48,3 +48,17 @@ def test_running_app_native_failure_preserves_result_and_maps_full_tool_name(tmp
     monkeypatch.setattr(httpx, "AsyncClient", lambda **kw: real_client(transport=httpx.MockTransport(respond), **kw))
     result = asyncio.run(mcp_server.call_tool("vectorcraft_draw_shape", {"project_id": "a", "shape": "ellipse"}))
     assert result.isError and result.structuredContent == failure
+
+
+def test_slow_live_health_does_not_start_a_second_native_session(tmp_path, monkeypatch):
+    monkeypatch.setenv("DURER_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("DURER_URL", "http://127.0.0.1:1")
+    real_client = httpx.AsyncClient
+
+    async def respond(request):
+        raise httpx.ReadTimeout("App is connected but health reply is pending", request=request)
+
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kw: real_client(transport=httpx.MockTransport(respond), **kw))
+    monkeypatch.setattr(store, "list_projects", lambda: (_ for _ in ()).throw(AssertionError("Must not assume a slow app is offline")))
+    result = asyncio.run(mcp_server.call_tool("illustration_list", {}))
+    assert result.isError and "health reply is pending" in result.structuredContent["error"]
