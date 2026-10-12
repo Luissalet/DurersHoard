@@ -28,7 +28,7 @@ async def _running_app_call(name: str, arguments: dict[str, Any]):
     async with httpx.AsyncClient(timeout=180, trust_env=False) as client:
         try:
             health = await client.get(base.rstrip("/") + "/api/health", timeout=2)
-        except httpx.ConnectError:
+        except (httpx.ConnectError, httpx.ConnectTimeout):
             return None
         if not health.is_success:
             return None
