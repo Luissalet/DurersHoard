@@ -1,0 +1,23 @@
+// Modified for Dürer's Hoard: detached engine, product identity and historical import.
+//! The All Tools drawer: every tool as a button; picking one selects it and closes the drawer.
+
+use super::DialogSpec;
+use crate::DurerApp;
+use crate::state::Dialog;
+
+pub(super) const SPEC: DialogSpec = DialogSpec { heading: |_| "All Tools".into(), body, ok: None, ..DialogSpec::FORM };
+
+fn body(app: &mut DurerApp, ui: &mut egui::Ui, _: &mut Dialog) -> bool {
+    let mut picked = false;
+    for g in durer_tools::TOOL_GROUPS {
+        ui.horizontal_wrapped(|ui| {
+            for tool in g.iter() {
+                if ui.button(tool.label.trim_end_matches(" Tool")).clicked() {
+                    app.select_tool(tool.id);
+                    picked = true;
+                }
+            }
+        });
+    }
+    picked
+}

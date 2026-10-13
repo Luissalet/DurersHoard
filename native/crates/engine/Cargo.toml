@@ -1,0 +1,39 @@
+[package]
+name = "durer-engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Dürer engine: sessions, history, selection, the command registry"
+
+[lints]
+workspace = true
+
+[dependencies]
+durer-geom = { workspace = true }
+durer-color = { workspace = true }
+durer-doc = { workspace = true }
+durer-tools = { workspace = true }
+durer-text = { workspace = true }
+durer-render = { workspace = true }
+durer-pathops = { workspace = true }
+durer-brush = { workspace = true }
+durer-trace = { workspace = true }
+durer-svg = { workspace = true }
+durer-format = { workspace = true }
+durer-pdf = { workspace = true }
+durer-cad = { workspace = true }
+durer-eps = { workspace = true }
+durer-metafile = { workspace = true }
+durer-plugins = { workspace = true }
+image = { workspace = true }
+flate2 = { workspace = true }
+kurbo = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+log = { workspace = true }
+
+[dev-dependencies]
+durer-testkit = { workspace = true }
+proptest = { workspace = true }
+wat = { workspace = true }

@@ -1,4 +1,4 @@
-"""Direct, lossless bridge to VectorCraft's complete native MCP surface."""
+"""Dürer's owned Rust engine, desktop editor and complete command surface."""
 from __future__ import annotations
 
 import asyncio
@@ -15,7 +15,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.shared.exceptions import McpError
 
-from .config import settings
+from .config import ROOT, settings
 
 _gui_processes: dict[str, tuple[subprocess.Popen, str]] = {}
 
@@ -28,10 +28,14 @@ def failed_results(results: list[dict[str, Any]]) -> bool:
 
 
 def executable() -> Path:
-    path = settings().vectorcraft_cli
-    if path is None or not path.is_file():
-        raise RuntimeError("Configure vectorcraft_cli in local-config.json or DURER_VECTORCRAFT_CLI.")
+    path = ROOT / "native" / "bin" / ("durer-cli.exe" if os.name == "nt" else "durer-cli")
+    if not path.is_file():
+        raise RuntimeError("Build the Dürer engine with python scripts/build_engine.py.")
     return path
+
+
+def gui_executable() -> Path:
+    return ROOT / "native" / "bin" / ("durer.exe" if os.name == "nt" else "durer")
 
 
 def environment() -> dict[str, str]:
@@ -122,9 +126,9 @@ def dispatch(actions: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def launch_gui(project_id: str) -> dict[str, Any]:
     """Start the verified VectorCraft GUI control server and return its MCP address."""
-    configured = settings().vectorcraft_gui
-    if configured is None or not configured.is_file():
-        raise RuntimeError("The sibling vectorcraft.exe GUI is not configured or not present")
+    configured = gui_executable()
+    if not configured.is_file():
+        raise RuntimeError("Build the Dürer desktop editor with python scripts/build_engine.py.")
     existing = _gui_processes.get(project_id)
     if existing and existing[0].poll() is None:
         return {"executable": str(configured), "pid": existing[0].pid, "address": existing[1], "reused": True}
@@ -136,7 +140,7 @@ def launch_gui(project_id: str) -> dict[str, Any]:
     appdata.mkdir(parents=True, exist_ok=True)
     localappdata.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, APPDATA=str(appdata), LOCALAPPDATA=str(localappdata))
-    log_path = root / "vectorcraft-gui.log"
+    log_path = root / "durer-editor.log"
     log = log_path.open("ab")
     try:
         process = subprocess.Popen([str(configured), "--control", str(port)], cwd=str(configured.parent),
@@ -173,6 +177,6 @@ def cli_help() -> dict[str, Any]:
     proc = subprocess.run([str(executable()), "--help"], capture_output=True, timeout=30,
                           env=environment(), check=False)
     output = "\n".join(part.decode("utf-8", "replace") for part in (proc.stdout, proc.stderr) if part)
-    if "vectorcraft-cli" not in output:
+    if "durer-cli" not in output:
         raise RuntimeError(f"VectorCraft CLI help unavailable: {output[-1200:]}")
     return {"executable": str(executable()), "help": output}

@@ -46,6 +46,8 @@ def thumbnail(project: Path, *, refresh: bool = False) -> tuple[Path, bool]:
     SHA-256 detects external file changes regardless of manifest timestamps.
     Live editor previews remain separate so their native undo/state is untouched.
     """
+    if not project.is_file() and project.with_name("project.vectorcraft").is_file():
+        project = project.with_name("project.vectorcraft")
     if not project.is_file() or not project.stat().st_size:
         raise FileNotFoundError("Native project is not saved")
     cache = project.parent / "cache"
@@ -74,7 +76,7 @@ def thumbnail(project: Path, *, refresh: bool = False) -> tuple[Path, bool]:
             stage = Path(staging)
             # Keep the snapshot beside its original so relative linked assets
             # resolve against the same directory. The source file stays read-only.
-            with tempfile.NamedTemporaryFile(prefix=".thumbnail-source-", suffix=".vectorcraft", dir=project.parent, delete=False) as stream:
+            with tempfile.NamedTemporaryFile(prefix=".thumbnail-source-", suffix=".durer", dir=project.parent, delete=False) as stream:
                 snapshot = Path(stream.name)
             try:
                 shutil.copyfile(project, snapshot)

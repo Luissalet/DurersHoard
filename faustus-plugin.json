@@ -2,17 +2,21 @@
   "schema": 1,
   "id": "durer",
   "name": "Dürer's Hoard",
-  "purpose": "Local vector illustration workspace with persistent VectorCraft projects and complete native MCP access.",
+  "purpose": "Local vector illustration workspace with owned editable documents, engine, desktop editor and MCP access.",
   "capabilities": [
     "illustration-catalog",
-    "native-vectorcraft-documents",
-    "native-vectorcraft-mcp-discovery",
-    "native-vectorcraft-mcp-dispatch",
-    "persistent-vectorcraft-sessions",
+    "native-durer-documents",
+    "native-durer-mcp-discovery",
+    "native-durer-mcp-dispatch",
+    "persistent-durer-sessions",
     "svg-png-pdf-exports",
     "hoard-illustration-references"
   ],
-  "placeholders": ["DURER_DIR", "PYTHON", "APP_URL"],
+  "placeholders": [
+    "DURER_DIR",
+    "PYTHON",
+    "APP_URL"
+  ],
   "defaults": {
     "APP_URL": "http://127.0.0.1:5222",
     "PYTHON": "{DURER_DIR}/.venv/Scripts/python.exe"
@@ -20,12 +24,27 @@
   "app": {
     "url_default": "{APP_URL}",
     "ui_url": "{APP_URL}",
-    "health": {"path": "/api/health", "expect": {"service": "durers-hoard"}},
-    "identify": {"service": ["durers-hoard"], "title": ["dürer's hoard", "durer"]},
+    "health": {
+      "path": "/api/health",
+      "expect": {
+        "service": "durers-hoard"
+      }
+    },
+    "identify": {
+      "service": [
+        "durers-hoard"
+      ],
+      "title": [
+        "dürer's hoard",
+        "durer"
+      ]
+    },
     "launch_hint": {
       "kind": "process",
       "executable": "{PYTHON}",
-      "argv": ["scripts/launch.py"],
+      "argv": [
+        "scripts/launch.py"
+      ],
       "cwd": "{DURER_DIR}",
       "env": {
         "DURER_HOST": "127.0.0.1",
@@ -33,21 +52,42 @@
         "DURER_CONFIG": "{DURER_DIR}/local-config.json",
         "HOARD_APP_ID": "durer"
       },
-      "readiness": {"url": "{APP_URL}/api/health", "timeout_s": 30}
+      "readiness": {
+        "url": "{APP_URL}/api/health",
+        "timeout_s": 30
+      }
     }
   },
-  "x-family": {"agent_contract": true, "stack": "python", "copilot": {"provider": "faustus", "contract": "1.0", "panel": "/api/copilot/panel.js", "context": ["project", "active_objects", "view.editor"]}},
+  "x-family": {
+    "agent_contract": true,
+    "stack": "python",
+    "copilot": {
+      "provider": "faustus",
+      "contract": "1.0",
+      "panel": "/api/copilot/panel.js",
+      "context": [
+        "project",
+        "active_objects",
+        "view.editor"
+      ]
+    }
+  },
   "mcp": {
     "transport": "stdio",
     "command": "{PYTHON}",
-    "args": ["-m", "durer_hoard.mcp_server"],
+    "args": [
+      "-m",
+      "durer_hoard.mcp_server"
+    ],
     "cwd": "{DURER_DIR}",
     "env": {
       "DURER_CONFIG": "{DURER_DIR}/local-config.json",
       "DURER_URL": "{APP_URL}",
       "HOARD_APP_ID": "durer"
     },
-    "optional_env": ["HOARD_HUB_URL"]
+    "optional_env": [
+      "HOARD_HUB_URL"
+    ]
   },
-  "notes": "HoardLink is installed editable into the dedicated .venv. VectorCraft remains a separate verified upstream executable configured in ignored local-config.json. Native undo works while the engine process is active; file snapshots can restore edits after a service restart. Capability parity with other vector editors has not been measured."
+  "notes": "Owned Rust engine and desktop editor built from native/. Historical .vectorcraft and .drawcraft import preserves originals. Durable snapshots retain undo after service restart. No external application or configured legacy CLI is required. Full reference parity has not been certified."
 }

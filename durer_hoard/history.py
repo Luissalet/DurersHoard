@@ -21,7 +21,7 @@ def _hash(path: Path) -> str:
 
 
 def _snapshot_name(label: str) -> str:
-    return f"{time.time_ns()}-{label}.vectorcraft"
+    return f"{time.time_ns()}-{label}.durer"
 
 
 def _save(path: Path, data: dict) -> None:
@@ -43,6 +43,8 @@ def _execute(project_id: str, project_path: Path, actions: list[dict]):
     history.setdefault("redo", [])
     snapshots = store.project_root(project_id) / "snapshots"
     snapshots.mkdir(exist_ok=True)
+    if not project_path.is_file() and project_path.with_name("project.vectorcraft").is_file():
+        sessions.execute(project_id, project_path, [])
     before_hash = _hash(project_path)
     action_names = [str(action.get("name", "")) for action in actions]
 

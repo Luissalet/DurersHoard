@@ -1,0 +1,22 @@
+[package]
+name = "durer-tools"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Dürer tool state machines: pointer events in, commands and overlays out"
+
+[lints]
+workspace = true
+
+[dependencies]
+durer-geom = { workspace = true }
+durer-color = { workspace = true }
+durer-doc = { workspace = true }
+durer-pathops = { workspace = true }
+durer-text = { workspace = true }
+kurbo = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+image = { workspace = true }

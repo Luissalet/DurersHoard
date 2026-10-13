@@ -10,3 +10,6 @@ local-config.json
 *.log
 native-craft-bundles/
 artifacts/
+native/target/
+native/bin/
+.impeccable/review/

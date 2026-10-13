@@ -114,6 +114,18 @@ async function main() {
   const payload = JSON.parse(actionCall.options.body);
   assert.equal(payload.actions[0].name, 'add_text');
   assert.equal(payload.actions[0].arguments.text, 'A title');
+  // The engine's transform schema uses percentage values. 100% must remain unchanged.
+  vm.runInNewContext('selectedIds=[2]', sandbox);
+  get('#scaleValue').value = '100';
+  get('#moveX').value = '10';
+  get('#moveY').value = '0';
+  get('#rotationValue').value = '0';
+  get('#applyTransform').onclick();
+  await new Promise(resolve => setImmediate(resolve));
+  const transformed = calls.filter(call => call.url.endsWith('/actions'))
+    .map(call => JSON.parse(call.options.body).actions[0]).find(action => action.name === 'transform');
+  assert.equal(transformed.arguments.scale, 100);
+  assert.equal(transformed.arguments.dx, 10);
   console.log('DOM modal workflow passed: boot, create canvas, import, and add text');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

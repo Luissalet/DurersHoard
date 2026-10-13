@@ -8,14 +8,14 @@ Loopback only (`127.0.0.1:5222` by default). Every request passes the shared Hoa
 | Route | What it does |
 |---|---|
 | `GET /api/health` | service, engine and GUI configured, data folder, Hoard Link block, `copilot` (true when the Faustus copilot is installed) |
-| `GET /api/catalog` | the native VectorCraft tools and commands |
+| `GET /api/catalog` | the owned Dürer tools and commands; alias `/api/engine/catalog` |
 | `GET /api/illustrations` / `POST /api/illustrations` | list / create (title, optional canvas size and units) |
 | `POST /api/illustrations/import` | import a source file as a new illustration |
 | `GET /api/illustrations/{id}` | one illustration (id, title, `hoard://` reference) |
 | `POST /api/illustrations/{id}/actions` | run native actions (`inspect_document`, `draw_shape`, `transform`, `set_paint`, ...) |
 | `POST /api/illustrations/{id}/export` | export SVG / PNG / PDF |
 | `GET /api/illustrations/{id}/preview`, `/thumbnail`, `/native`, `/files/{area}/{filename}` | preview, thumbnail, project download, project files |
-| `POST /api/illustrations/{id}/open-gui` | open the project in VectorCraft |
+| `POST /api/illustrations/{id}/open-gui` | open the project in the owned Dürer desktop editor |
 | `POST /api/native/dispatch` | call one native tool |
 | `GET /api/operations/{id}` | receipt of an operation of this service lifetime |
 
@@ -34,4 +34,8 @@ The page side is `window.hoardCopilot` (`durer_hoard/static/copilot.js`): `conte
 (the open illustration and the selected objects, read with `inspect_document`) and `view.editor` (a half filled dialog,
 changed paint fields or transform values not yet applied); `onTurnEnd(detail)` re-reads the illustration, objects and library.
 
-The stdio MCP bridge sends calls to `/api/agent/call` when the app is reachable at `DURER_URL` (or the configured host/port) with the same data directory. The existing API tools dispatch the full native catalog through `illustration_native_call`; the 31 MCP tool names/schemas stay available. Offline calls keep the standalone engine. Once a POST is sent, a lost reply reports `outcome_unknown` rather than retrying locally. Preview/export do not save the source document. Refresh keeps edits made while its requests are pending and updates only untouched paint fields.
+The stdio MCP bridge sends calls to `/api/agent/call` when the app is reachable at `DURER_URL` (or the configured host/port) with the same data directory. The existing API tools dispatch the full native catalog through `illustration_native_call`; all 31 historical MCP names stay available, plus `durer_catalog` and 25 `durer_<tool>` names (57 total). Offline calls keep the standalone engine. Once a POST is sent, a lost reply reports `outcome_unknown` rather than retrying locally. Preview/export do not save the source document. Refresh keeps edits made while its requests are pending and updates only untouched paint fields.
+
+## Owned documents and engine
+
+See [OWNED-ENGINE.md](OWNED-ENGINE.md). Imports also accept `.durer`, `.vectorcraft` and `.drawcraft`. Existing illustration IDs, originals, sources and snapshots are retained; first editing creates `project.durer`. Native download returns the owned copy. `/api/health` reports binaries built in this repository, regardless of historical CLI/GUI configuration.

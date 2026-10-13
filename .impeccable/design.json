@@ -1,0 +1,384 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-13T21:33:26.872Z",
+  "title": "Design System: Dürer's Hoard",
+  "extensions": {
+    "colorMeta": {
+      "green": {
+        "role": "primary",
+        "displayName": "Atelier Green",
+        "tonalRamp": [
+          "oklch(15.00% 0.06267 134.10)",
+          "oklch(26.43% 0.06267 134.10)",
+          "oklch(37.86% 0.06267 134.10)",
+          "oklch(49.29% 0.06267 134.10)",
+          "oklch(60.71% 0.06267 134.10)",
+          "oklch(72.14% 0.06267 134.10)",
+          "oklch(83.57% 0.06267 134.10)",
+          "oklch(95.00% 0.06267 134.10)"
+        ]
+      },
+      "green-dark": {
+        "role": "primary",
+        "displayName": "Deep Atelier Green",
+        "tonalRamp": [
+          "oklch(15.00% 0.05286 136.26)",
+          "oklch(26.43% 0.05286 136.26)",
+          "oklch(37.86% 0.05286 136.26)",
+          "oklch(49.29% 0.05286 136.26)",
+          "oklch(60.71% 0.05286 136.26)",
+          "oklch(72.14% 0.05286 136.26)",
+          "oklch(83.57% 0.05286 136.26)",
+          "oklch(95.00% 0.05286 136.26)"
+        ]
+      },
+      "sage": {
+        "role": "primary",
+        "displayName": "Sage Wash",
+        "tonalRamp": [
+          "oklch(15.00% 0.01473 132.48)",
+          "oklch(26.43% 0.01473 132.48)",
+          "oklch(37.86% 0.01473 132.48)",
+          "oklch(49.29% 0.01473 132.48)",
+          "oklch(60.71% 0.01473 132.48)",
+          "oklch(72.14% 0.01473 132.48)",
+          "oklch(83.57% 0.01473 132.48)",
+          "oklch(95.00% 0.01473 132.48)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Warm Ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.01299 120.26)",
+          "oklch(26.43% 0.01299 120.26)",
+          "oklch(37.86% 0.01299 120.26)",
+          "oklch(49.29% 0.01299 120.26)",
+          "oklch(60.71% 0.01299 120.26)",
+          "oklch(72.14% 0.01299 120.26)",
+          "oklch(83.57% 0.01299 120.26)",
+          "oklch(95.00% 0.01299 120.26)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Quiet Grey",
+        "tonalRamp": [
+          "oklch(15.00% 0.01515 116.06)",
+          "oklch(26.43% 0.01515 116.06)",
+          "oklch(37.86% 0.01515 116.06)",
+          "oklch(49.29% 0.01515 116.06)",
+          "oklch(60.71% 0.01515 116.06)",
+          "oklch(72.14% 0.01515 116.06)",
+          "oklch(83.57% 0.01515 116.06)",
+          "oklch(95.00% 0.01515 116.06)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Ivory Paper",
+        "tonalRamp": [
+          "oklch(15.00% 0.00660 106.52)",
+          "oklch(26.43% 0.00660 106.52)",
+          "oklch(37.86% 0.00660 106.52)",
+          "oklch(49.29% 0.00660 106.52)",
+          "oklch(60.71% 0.00660 106.52)",
+          "oklch(72.14% 0.00660 106.52)",
+          "oklch(83.57% 0.00660 106.52)",
+          "oklch(95.00% 0.00660 106.52)"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Panel White",
+        "tonalRamp": [
+          "oklch(15.00% 0.00000 89.88)",
+          "oklch(26.43% 0.00000 89.88)",
+          "oklch(37.86% 0.00000 89.88)",
+          "oklch(49.29% 0.00000 89.88)",
+          "oklch(60.71% 0.00000 89.88)",
+          "oklch(72.14% 0.00000 89.88)",
+          "oklch(83.57% 0.00000 89.88)",
+          "oklch(95.00% 0.00000 89.88)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Paper Edge",
+        "tonalRamp": [
+          "oklch(15.00% 0.01205 111.77)",
+          "oklch(26.43% 0.01205 111.77)",
+          "oklch(37.86% 0.01205 111.77)",
+          "oklch(49.29% 0.01205 111.77)",
+          "oklch(60.71% 0.01205 111.77)",
+          "oklch(72.14% 0.01205 111.77)",
+          "oklch(83.57% 0.01205 111.77)",
+          "oklch(95.00% 0.01205 111.77)"
+        ]
+      },
+      "focus": {
+        "role": "primary",
+        "displayName": "Focus Sage",
+        "tonalRamp": [
+          "oklch(15.00% 0.05935 134.70)",
+          "oklch(26.43% 0.05935 134.70)",
+          "oklch(37.86% 0.05935 134.70)",
+          "oklch(49.29% 0.05935 134.70)",
+          "oklch(60.71% 0.05935 134.70)",
+          "oklch(72.14% 0.05935 134.70)",
+          "oklch(83.57% 0.05935 134.70)",
+          "oklch(95.00% 0.05935 134.70)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Welcome Display",
+        "purpose": "Fluid welcome heading, reduced to a fixed size on small screens."
+      },
+      "title": {
+        "displayName": "Project Title",
+        "purpose": "Current project heading."
+      },
+      "section": {
+        "displayName": "Section Title",
+        "purpose": "Library and modal headings."
+      },
+      "card": {
+        "displayName": "Project Name",
+        "purpose": "Saved project names."
+      },
+      "body": {
+        "displayName": "Interface Body",
+        "purpose": "General page copy."
+      },
+      "button": {
+        "displayName": "Action Label",
+        "purpose": "Primary, secondary and quiet actions."
+      },
+      "tab": {
+        "displayName": "Tab Label",
+        "purpose": "Inspector and catalog tabs."
+      },
+      "native": {
+        "displayName": "Native Content",
+        "purpose": "Literal object names and native arguments."
+      }
+    },
+    "shadows": [
+      {
+        "name": "project-hover",
+        "value": "0 14px 38px #25271d0b",
+        "purpose": "Shared project card hover shadow."
+      },
+      {
+        "name": "artboard",
+        "value": "0 8px 32px #23251e18",
+        "purpose": "Separates the white artboard from the checkerboard."
+      },
+      {
+        "name": "modal",
+        "value": "0 24px 80px #1d201b33",
+        "purpose": "Modal card above the translucent scrim."
+      }
+    ],
+    "motion": [
+      {
+        "name": "button-transition",
+        "value": ".15s",
+        "purpose": "Button hover state and small lift."
+      },
+      {
+        "name": "card-transition",
+        "value": ".18s",
+        "purpose": "Project card hover state and small lift."
+      },
+      {
+        "name": "toast-transition",
+        "value": ".2s",
+        "purpose": "Toast opacity and vertical transform."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "medium-max",
+        "value": "1000px"
+      },
+      {
+        "name": "small-max",
+        "value": "640px"
+      }
+    ],
+    "evidence": {
+      "sources": [
+        "durer_hoard/static/index.html",
+        "durer_hoard/static/app.js",
+        "durer_hoard/static/style.css",
+        "PRODUCT.md"
+      ],
+      "captures": [
+        {
+          "path": ".impeccable/review/desktop-top.png",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "path": ".impeccable/review/desktop-bottom.png",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "path": ".impeccable/review/mobile.png",
+          "width": 375,
+          "height": 1260
+        }
+      ],
+      "excludedCaptures": [
+        ".impeccable/review/desktop.png",
+        ".impeccable/review/desktop-r2.png"
+      ],
+      "limits": "Finish Pass is scoped to PRODUCT.md owned-engine truth and visible mobile actions. Regex detector was degraded; no measured contrast, complete accessibility or native parity claim.",
+      "notCanonized": "Existing glyph icons and tracked uppercase labels remain incumbent details, not reusable system rules.",
+      "ramps": "Eight-step OKLCH ramps are synthesized panel metadata, not implemented theme scales.",
+      "drift": "Legacy PRODUCT.md schema was reported by the parent context pass and intentionally preserved."
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Filled action used for creation and export.",
+      "html": "<button class=\"ds-primary\">Export</button>",
+      "css": ".ds-primary{border:1px solid var(--line, #e7e8df);border-radius:9px;padding:10px 15px;display:inline-flex;align-items:center;justify-content:center;gap:9px;font:600 12px 'DM Sans', Arial, sans-serif;cursor:pointer;transition:.15s;color:#fff;background:var(--green, #566d48);border-color:var(--green, #566d48)}.ds-primary:hover{border-color:#c8cdbf;background:var(--green-dark, #3e5235);transform:translateY(-1px)}.ds-primary:focus-visible{outline:2px solid #8aa27d;outline-offset:2px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Bordered action used for inspection and applying edits.",
+      "html": "<button class=\"ds-secondary\">Inspect document</button>",
+      "css": ".ds-secondary{border:1px solid var(--line, #e7e8df);border-radius:9px;padding:10px 15px;display:inline-flex;align-items:center;justify-content:center;gap:9px;font:600 12px 'DM Sans', Arial, sans-serif;cursor:pointer;transition:.15s;background:#fff;color:var(--ink, #24261f)}.ds-secondary:hover{border-color:#c8cdbf;transform:translateY(-1px)}.ds-secondary:focus-visible{outline:2px solid #8aa27d;outline-offset:2px}"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Supporting workspace action with transparent surface.",
+      "html": "<button class=\"ds-quiet\">Download project</button>",
+      "css": ".ds-quiet{border:1px solid var(--line, #e7e8df);border-radius:9px;padding:10px 15px;display:inline-flex;align-items:center;justify-content:center;gap:9px;font:600 12px 'DM Sans', Arial, sans-serif;cursor:pointer;transition:.15s;border-color:transparent;background:transparent;color:var(--muted, #797b71)}.ds-quiet:hover{border-color:#c8cdbf;transform:translateY(-1px)}.ds-quiet:focus-visible{outline:2px solid #8aa27d;outline-offset:2px}"
+    },
+    {
+      "name": "Catalog Search",
+      "kind": "input",
+      "refersTo": "input-catalog",
+      "description": "Search field from the native tool and command catalog.",
+      "html": "<input class=\"ds-search\" aria-label=\"Filter tools\" placeholder=\"Filter tools\">",
+      "css": ".ds-search{padding:9px 11px;border:1px solid var(--line, #e7e8df);border-radius:7px;margin:13px 0;font:11px 'DM Sans', Arial, sans-serif;background:#fff;color:var(--ink, #24261f)}.ds-search:focus-visible{outline:2px solid #8aa27d;outline-offset:2px}"
+    },
+    {
+      "name": "Inspector Tabs",
+      "kind": "nav",
+      "refersTo": "navigation-tab",
+      "description": "Active underline identifies Objects or Properties.",
+      "html": "<nav class=\"ds-tabs\" aria-label=\"Inspector\"><button class=\"ds-tab ds-active\">Objects</button><button class=\"ds-tab\">Properties</button></nav>",
+      "css": ".ds-tabs{display:flex;border-bottom:1px solid var(--line, #e7e8df)}.ds-tab{flex:1;border:0;background:transparent;color:var(--muted, #797b71);padding:13px 8px;font:10px 'DM Sans', Arial, sans-serif;border-bottom:2px solid transparent;cursor:pointer}.ds-tab.ds-active{color:var(--green-dark, #3e5235);border-bottom-color:var(--green, #566d48)}.ds-tab:focus-visible{outline:2px solid #8aa27d;outline-offset:2px}"
+    },
+    {
+      "name": "Project Card",
+      "kind": "card",
+      "refersTo": "project-card",
+      "description": "Library card with contained artwork, name and timestamp.",
+      "html": "<article class=\"ds-project\"><div class=\"ds-thumb\"><svg viewBox=\"0 0 180 100\" aria-label=\"Example vector artwork\" role=\"img\"><rect x=\"35\" y=\"20\" width=\"110\" height=\"60\" fill=\"#566d48\" stroke=\"#24261f\" stroke-width=\"4\"/></svg></div><div class=\"ds-info\"><b>Illustration</b><small>13/10/2026</small></div></article>",
+      "css": ".ds-project{background:#fff;border:1px solid var(--line, #e7e8df);border-radius:12px;overflow:hidden;cursor:pointer;transition:.18s;width:260px;color:var(--ink, #24261f)}.ds-project:hover{transform:translateY(-3px);box-shadow:var(--shadow,0 14px 38px #25271d0b)}.ds-thumb{height:180px;background:#f0f1e9;display:grid;place-items:center;overflow:hidden}.ds-thumb svg{width:100%;height:100%;object-fit:contain}.ds-info{padding:13px 15px}.ds-info b{font:500 16px 'Playfair Display', Georgia, serif}.ds-info small{display:block;color:var(--muted, #797b71);font:10px 'DM Sans', Arial, sans-serif;margin-top:7px}"
+    },
+    {
+      "name": "Inspector Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "White bordered editing container with compact internal content.",
+      "html": "<section class=\"ds-panel\"><div class=\"ds-content\"><p class=\"ds-overview\">project.durer · 2 objects · 1 artboards</p></div></section>",
+      "css": ".ds-panel{background:#fff;border:1px solid var(--line, #e7e8df);border-radius:10px;overflow:hidden;color:var(--ink, #24261f)}.ds-content{padding:16px 14px}.ds-overview{margin:0 0 10px;font:500 13px 'Playfair Display', Georgia, serif}"
+    },
+    {
+      "name": "Selected Tool Treatment",
+      "kind": "button",
+      "refersTo": "tool-selected",
+      "description": "Label and selection treatment; incumbent glyph icons are deliberately excluded from this reusable sample.",
+      "html": "<button class=\"ds-tool ds-active\"><span>Select</span></button>",
+      "css": ".ds-tool{border:0;background:transparent;color:#696b60;border-radius:7px;min-height:55px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font:18px 'DM Sans', Arial, sans-serif;cursor:pointer;min-width:70px}.ds-tool span{font-size:9px}.ds-tool:hover,.ds-tool.ds-active{background:var(--sage, #e8eee4);color:var(--green-dark, #3e5235)}.ds-tool:focus-visible{outline:2px solid #8aa27d;outline-offset:2px}"
+    },
+    {
+      "name": "Object Row",
+      "kind": "button",
+      "refersTo": "object-row",
+      "description": "Compact literal object name with shared hover/selection colour.",
+      "html": "<button class=\"ds-object\">Rectangle · &lt;Rectangle&gt;</button>",
+      "css": ".ds-object{border:0;border-radius:5px;background:#f8f9f5;text-align:left;padding:8px;color:#5e6258;font:10px Consolas,monospace;cursor:pointer}.ds-object:hover,.ds-object.ds-selected{background:var(--sage, #e8eee4);color:var(--green-dark, #3e5235)}.ds-object:focus-visible{outline:2px solid #8aa27d;outline-offset:2px}"
+    },
+    {
+      "name": "Canvas Surface",
+      "kind": "custom",
+      "description": "Checkerboard stage and raised plain artboard; example artwork is illustrative rather than a new identity asset.",
+      "html": "<div class=\"ds-stage\"><div class=\"ds-artboard\"><svg viewBox=\"0 0 180 135\" role=\"img\" aria-label=\"Example vector artwork\"><rect x=\"35\" y=\"35\" width=\"90\" height=\"60\" fill=\"#566d48\" stroke=\"#24261f\" stroke-width=\"4\"/></svg></div></div>",
+      "css": ".ds-stage{display:grid;place-items:center;overflow:auto;padding:34px;background-color:#f4f4ef;background-image:linear-gradient(45deg,#e9eae4 25%,transparent 25%),linear-gradient(-45deg,#e9eae4 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e9eae4 75%),linear-gradient(-45deg,transparent 75%,#e9eae4 75%);background-size:18px 18px;background-position:0 0,0 9px,9px -9px,-9px 0}.ds-artboard{position:relative;width:min(100%,720px);aspect-ratio:4/3;background:#fff;box-shadow:0 8px 32px #23251e18;display:grid;place-items:center;overflow:hidden}.ds-artboard svg{width:100%;height:100%;object-fit:contain}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The vector atelier",
+    "overview": "The implemented workshop places an editable illustration at the centre of a quiet, pale workspace. Serif project titles and the existing family icon identify the Hoard; compact sans-serif controls carry the daily editing work. This records the incumbent identity, rather than proposing a replacement visual world.\n\nWhite panels sit on an ivory page, with sage selection states and muted green actions. The browser editor arranges tools, preview and object inspection around the work. Native command names and editable arguments use monospace where their literal content matters.",
+    "keyCharacteristics": [
+      "Serif titles paired with compact sans-serif controls.",
+      "Ivory page, white panels and muted green actions.",
+      "Visible tool rail, preview and object inspector.",
+      "Existing family icon preserved as the identity asset.",
+      "Responsive reflow of controls and panels."
+    ],
+    "rules": [
+      {
+        "name": "The Green State Rule",
+        "body": "Use the existing green family to distinguish primary action, hover and selection; keep artwork colours independent of interface states.",
+        "section": "neutral"
+      },
+      {
+        "name": "The Title and Control Rule",
+        "body": "Keep serif type for naming the work and sans-serif type for operating it; keep literal native content in monospace.",
+        "section": "hierarchy"
+      },
+      {
+        "name": "The Visible Actions Rule",
+        "body": "At the small breakpoint, wrap the workspace actions so desktop opening, project download, undo, redo, format selection and export remain visible. The supplied 375px capture shows them in two rows; the exact wrapping follows available width and translated text.",
+        "section": "layout"
+      },
+      {
+        "name": "The Surface Separation Rule",
+        "body": "Use borders for panels at rest, the shared hover shadow for project cards, and the existing artboard/modal depth treatments in their own contexts.",
+        "section": "elevation-depth"
+      },
+      {
+        "name": "The Role Corner Rule",
+        "body": "Preserve the existing radius by component role rather than assigning one corner size to every surface.",
+        "section": "shapes"
+      },
+      {
+        "name": "The Shared Selection Rule",
+        "body": "Use the same sage/deep-green treatment for selected tools and selected object rows, while retaining the active-tab underline.",
+        "section": "tool-rail-and-object-list"
+      }
+    ],
+    "dos": [
+      "**Do** preserve the existing family icon, serif titles and sans-serif controls.",
+      "**Do** use sage selection states consistently across tools and object rows.",
+      "**Do** keep workspace actions visible through wrapping at the small breakpoint.",
+      "**Do** keep native names, object details and arguments literal and readable in their existing contexts.",
+      "**Do** distinguish presentation zoom from document scale percentages."
+    ],
+    "donts": [
+      "**Don't** replace the incumbent visual identity while extending the editor.",
+      "**Don't** hide desktop opening, project download, undo, redo, format selection or export to simplify mobile.",
+      "**Don't** turn existing glyph icons or tracked uppercase labels into a required pattern for new surfaces.",
+      "**Don't** infer measured contrast, complete accessibility or native feature parity from this record."
+    ]
+  }
+}
+

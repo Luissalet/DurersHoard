@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .config import ROOT, settings
-from .native import catalog, dispatch, executable, launch_gui, failed_results
+from .native import catalog, dispatch, executable, launch_gui, gui_executable, failed_results
 from .history import execute as history_execute
 from .sessions import sessions
 from .thumbnails import thumbnail as gallery_thumbnail
@@ -49,7 +49,7 @@ app = FastAPI(title="Dürer's Hoard", version="0.1.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=ROOT / "durer_hoard" / "static"), name="static")
 if hoard_family:
     hoard_family.install_fastapi(app, "durer", str(settings().data_dir), contract=True,
-                                  instructions="Persistent local VectorCraft illustration projects. Native tools and commands are fully discoverable.")
+                                  instructions="Persistent local Dürer illustration projects. Native tools and commands are fully discoverable.")
 if hoard_guard:
     hoard_guard.install_guard(app, port_getter=lambda: settings().port)
 
@@ -97,8 +97,8 @@ def index():
 
 @app.get("/api/health")
 def health():
-    configured = settings().vectorcraft_cli
-    gui = settings().vectorcraft_gui
+    configured = ROOT / "native/bin" / ("durer-cli.exe" if os.name == "nt" else "durer-cli")
+    gui = gui_executable()
     return {"ok": True, "service": "durers-hoard", "hoard_link": HOARDLINK_AVAILABLE, "copilot": COPILOT_INSTALLED,
             "engine_configured": bool(configured and configured.is_file()),
             "gui_configured": bool(gui and gui.is_file()),
@@ -112,6 +112,11 @@ def get_catalog():
         return catalog()
     except Exception as exc:
         raise HTTPException(503, f"Native engine discovery failed: {exc}") from exc
+
+
+@app.get("/api/engine/catalog")
+def engine_catalog():
+    return get_catalog()
 
 
 @app.get("/api/operations/{operation_id}")
@@ -133,7 +138,7 @@ def new_illustration(payload: CreateRequest):
         canvas, native_canvas = store.canvas_settings(payload.width, payload.height, payload.units)
         item = store.create(payload.title, canvas=canvas)
         project, root = _project(item["id"])
-        results = sessions.execute(item["id"], root / "project.vectorcraft", [], new_document=native_canvas)
+        results = sessions.execute(item["id"], root / "project.durer", [], new_document=native_canvas)
         return {**project, "results": results}
     except Exception as exc:
         raise HTTPException(503, str(exc)) from exc
@@ -143,7 +148,7 @@ def new_illustration(payload: CreateRequest):
 async def import_illustration(title: str, file: UploadFile = File(...)):
     filename = Path(file.filename or "source").name
     suffix = Path(filename).suffix.lower()
-    if suffix not in {".svg", ".png", ".jpg", ".jpeg", ".webp", ".pdf"}:
+    if suffix not in {".svg", ".png", ".jpg", ".jpeg", ".webp", ".pdf", ".durer", ".vectorcraft", ".drawcraft"}:
         raise HTTPException(415, "Import supports SVG, PNG, JPEG, WebP, and PDF files")
     data_dir = settings().data_dir / "staging"
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -157,7 +162,7 @@ async def import_illustration(title: str, file: UploadFile = File(...)):
         project, root = _project(item["id"])
         source_path = item["source"]["path"]
         results = await asyncio.to_thread(
-            sessions.execute, item["id"], root / "project.vectorcraft",
+            sessions.execute, item["id"], root / "project.durer",
             [{"name": "open_file", "arguments": {"path": source_path}}])
         return {**project, "results": results}
     except Exception as exc:
@@ -176,26 +181,26 @@ def illustration(project_id: str):
 def actions(project_id: str, payload: ActionsRequest):
     item, root = _project(project_id)
     try:
-        results = history_execute(project_id, root / "project.vectorcraft", payload.actions)
+        results = history_execute(project_id, root / "project.durer", payload.actions)
         result = {"illustration": store.read(project_id), "results": results}
         return JSONResponse(result, status_code=502) if failed_results(results) else result
     except Exception as exc:
-        raise HTTPException(502, f"VectorCraft action failed: {exc}") from exc
+        raise HTTPException(502, f"Dürer action failed: {exc}") from exc
 
 
 @app.post("/api/illustrations/{project_id}/export")
 def export(project_id: str, payload: ExportRequest):
     _, root = _project(project_id)
     fmt = payload.format.lower().lstrip(".")
-    if fmt not in {"svg", "png", "pdf", "jpg", "webp", "gif", "tiff", "bmp", "dxf", "eps", "emf", "wmf", "psd", "vectorcraft"}:
+    if fmt not in {"svg", "png", "pdf", "jpg", "webp", "gif", "tiff", "bmp", "dxf", "eps", "emf", "wmf", "psd", "durer", "vectorcraft"}:
         raise HTTPException(415, "Format is not in the native export schema")
     path = root / "exports" / f"{project_id}-{uuid.uuid4().hex}.{fmt}"
-    args = {**payload.arguments, "format": fmt, "path": str(path)}
+    args = {**payload.arguments, "format": "durer" if fmt == "vectorcraft" else fmt, "path": str(path)}
     try:
-        results = sessions.execute(project_id, root / "project.vectorcraft",
+        results = sessions.execute(project_id, root / "project.durer",
                                    [{"name": "export", "arguments": args}])
         if any(row.get("name") == "export" and row.get("is_error") for row in results):
-            raise RuntimeError("VectorCraft reported an export error")
+            raise RuntimeError("Dürer reported an export error")
         if not path.is_file() or path.stat().st_size == 0:
             raise RuntimeError("Native export reported success but produced no file")
         return {"format": fmt, "path": str(path), "url": f"/api/illustrations/{project_id}/files/exports/{path.name}",
@@ -220,10 +225,10 @@ def preview(project_id: str):
     _, root = _project(project_id)
     path = root / "exports" / f"preview-{uuid.uuid4().hex}.png"
     try:
-        results = sessions.execute(project_id, root / "project.vectorcraft",
+        results = sessions.execute(project_id, root / "project.durer",
                                    [{"name": "export", "arguments": {"format": "png", "path": str(path), "scale": 1}}])
         if any(row.get("name") == "export" and row.get("is_error") for row in results):
-            raise RuntimeError("VectorCraft reported a preview export error")
+            raise RuntimeError("Dürer reported a preview export error")
         if not path.is_file() or path.stat().st_size == 0:
             raise RuntimeError("Native preview export returned no PNG")
         return FileResponse(path, media_type="image/png", headers={"Cache-Control": "no-store"})
@@ -235,7 +240,7 @@ def preview(project_id: str):
 def thumbnail(project_id: str, refresh: bool = False):
     _, root = _project(project_id)
     try:
-        path, hit = gallery_thumbnail(root / "project.vectorcraft", refresh=refresh)
+        path, hit = gallery_thumbnail(root / "project.durer", refresh=refresh)
         return FileResponse(path, media_type="image/png", headers={
             "Cache-Control": "no-cache", "X-Durer-Thumbnail-Cache": "hit" if hit else "miss"})
     except FileNotFoundError as exc:
@@ -247,10 +252,12 @@ def thumbnail(project_id: str, refresh: bool = False):
 @app.get("/api/illustrations/{project_id}/native")
 def native_file(project_id: str):
     _, root = _project(project_id)
-    path = root / "project.vectorcraft"
+    path = root / "project.durer"
+    if not path.is_file() and path.with_name("project.vectorcraft").is_file():
+        sessions.execute(project_id, path, [])
     if not path.is_file():
         raise HTTPException(404, "Native project is not saved")
-    return FileResponse(path, filename=f"{project_id}.vectorcraft")
+    return FileResponse(path, filename=f"{project_id}.durer")
 
 
 @app.post("/api/illustrations/{project_id}/open-gui")
@@ -259,12 +266,12 @@ def open_gui(project_id: str):
     try:
         gui = launch_gui(project_id)
         sessions.connect(project_id, gui["address"])
-        results = sessions.execute(project_id, root / "project.vectorcraft", [])
+        results = sessions.execute(project_id, root / "project.durer", [])
         if any(row.get("is_error") for row in results):
-            raise RuntimeError("VectorCraft GUI did not open the native project")
-        return {**gui, "project_file": str(root / "project.vectorcraft"), "results": results}
+            raise RuntimeError("Dürer GUI did not open the native project")
+        return {**gui, "project_file": str(root / "project.durer"), "results": results}
     except Exception as exc:
-        raise HTTPException(502, f"Could not open VectorCraft desktop: {exc}") from exc
+        raise HTTPException(502, f"Could not open Dürer desktop: {exc}") from exc
 
 
 @app.post("/api/native/dispatch")
@@ -280,3 +287,4 @@ from . import agent_tools
 for _tool_name in ("illustration_list", "illustration_create", "illustration_inspect",
                    "illustration_native_call", "illustration_export", "vectorcraft_catalog"):
     app.add_api_route("/api/agent/" + _tool_name, getattr(agent_tools, _tool_name), methods=["POST"])
+app.add_api_route("/api/agent/durer_catalog", agent_tools.vectorcraft_catalog, methods=["POST"])

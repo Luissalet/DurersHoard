@@ -1,4 +1,4 @@
-"""Thin HoardLink HTTP tool routes; all editing remains native VectorCraft MCP."""
+"""Thin HoardLink HTTP tool routes; all editing remains native Dürer MCP."""
 from __future__ import annotations
 
 import uuid
@@ -56,30 +56,30 @@ def illustration_list():
 
 @router.post("/illustration_create")
 def illustration_create(payload: Create):
-    """Create an editable native VectorCraft illustration project."""
+    """Create an editable native Dürer illustration project."""
     canvas, native_canvas = store.canvas_settings(payload.width, payload.height, payload.units)
     item = store.create(payload.title, canvas=canvas)
     root = store.project_root(item["id"])
-    results = sessions.execute(item["id"], root / "project.vectorcraft", [], new_document=native_canvas)
+    results = sessions.execute(item["id"], root / "project.durer", [], new_document=native_canvas)
     return {"illustration": store.read(item["id"]), "results": results}
 
 
 @router.post("/illustration_inspect")
 def illustration_inspect(payload: ProjectId):
-    """Inspect a saved native document using VectorCraft."""
+    """Inspect a saved native document using Dürer."""
     item, root = _get(payload.project_id)
-    results = sessions.execute(item["id"], root / "project.vectorcraft", [{"name": "inspect_document", "arguments": {}}])
+    results = sessions.execute(item["id"], root / "project.durer", [{"name": "inspect_document", "arguments": {}}])
     return {"illustration": item, "results": results}
 
 
 @router.post("/illustration_native_call")
 def illustration_native_call(payload: NativeCall):
-    """Dispatch a verified native VectorCraft MCP tool in a persistent project session."""
+    """Dispatch a verified native Dürer MCP tool in a persistent project session."""
     item, root = _get(payload.project_id)
     names = {tool["name"] for tool in catalog()["tools"]}
     if payload.tool not in names:
         raise HTTPException(400, "Tool name is absent from the current native catalog")
-    results = history_execute(item["id"], root / "project.vectorcraft", [{"name": payload.tool, "arguments": payload.arguments}])
+    results = history_execute(item["id"], root / "project.durer", [{"name": payload.tool, "arguments": payload.arguments}])
     result = {"illustration": store.read(item["id"]), "results": results}
     return JSONResponse(result, status_code=502) if failed_results(results) else result
 
@@ -89,7 +89,7 @@ def illustration_export(payload: ProjectExport):
     """Export a native SVG, PNG, PDF, JPEG, or WebP file."""
     item, root = _get(payload.project_id)
     target = root / "exports" / (payload.project_id + "-" + uuid.uuid4().hex + "." + payload.format)
-    results = sessions.execute(item["id"], root / "project.vectorcraft", [{
+    results = sessions.execute(item["id"], root / "project.durer", [{
         "name": "export", "arguments": {"format": payload.format, "path": str(target)}}])
     if any(row.get("name") == "export" and row.get("is_error") for row in results):
         raise HTTPException(502, "Native export reported an error")

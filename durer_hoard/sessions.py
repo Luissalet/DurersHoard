@@ -49,10 +49,10 @@ class NativeSessions:
                 if pending:
                     loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
                 loop.close()
-            self.thread = threading.Thread(target=run_loop, name="durer-vectorcraft-mcp", daemon=True)
+            self.thread = threading.Thread(target=run_loop, name="durer-durer-mcp", daemon=True)
             self.thread.start()
             if not ready.wait(5):
-                raise RuntimeError("Could not start VectorCraft session loop")
+                raise RuntimeError("Could not start Dürer session loop")
             return self.loop
 
     def execute(self, project_id: str, path: Path, actions: list[dict[str, Any]], timeout: int = 180, new_document: dict[str, Any] | None = None):
@@ -88,7 +88,7 @@ class NativeSessions:
                         record.update(update)
             future.add_done_callback(reconcile)
             raise TimeoutError(
-                f"VectorCraft operation {operation_id} exceeded {timeout}s; it may still complete. "
+                f"Dürer operation {operation_id} exceeded {timeout}s; it may still complete. "
                 f"Check /api/operations/{operation_id} before retrying."
             ) from exc
         except BaseException as exc:
@@ -112,17 +112,23 @@ class NativeSessions:
                 async with stdio_client(params) as (read, write):
                     async with ClientSession(read, write) as client:
                         await client.initialize()
-                        if path.exists() and path.stat().st_size:
-                            opened = await client.call_tool("open_file", {"path": str(path)})
+                        legacy = path.with_name("project.vectorcraft")
+                        source = path if path.is_file() and path.stat().st_size else legacy
+                        if source.is_file() and source.stat().st_size:
+                            opened = await client.call_tool("open_file", {"path": str(source)})
                             if opened.isError:
-                                raise RuntimeError("VectorCraft could not reopen the saved project: " + str(serial(opened)))
+                                raise RuntimeError("Dürer could not reopen the saved project: " + str(serial(opened)))
+                            if source != path:
+                                saved = await client.call_tool("save_file", {"path": str(path)})
+                                if saved.isError:
+                                    raise RuntimeError("Dürer could not save the editable imported copy: " + str(serial(saved)))
                         else:
                             created = await client.call_tool("run_command", {"command": "file.new", "params": dict(new_document or {})})
                             if created.isError:
-                                raise RuntimeError("VectorCraft could not create a document: " + str(serial(created)))
+                                raise RuntimeError("Dürer could not create a document: " + str(serial(created)))
                             saved = await client.call_tool("save_file", {"path": str(path)})
                             if saved.isError:
-                                raise RuntimeError("VectorCraft could not initialize the native project: " + str(serial(saved)))
+                                raise RuntimeError("Dürer could not initialize the native project: " + str(serial(saved)))
                         ready.set_result(True)
                         while True:
                             item = await queue.get()
@@ -158,7 +164,7 @@ class NativeSessions:
             except BaseException as exc:
                 if not ready.done():
                     ready.set_exception(exc)
-        task = asyncio.create_task(worker(), name=f"vectorcraft-{project_id}")
+        task = asyncio.create_task(worker(), name=f"durer-{project_id}")
         await ready
         return _Session(task, queue)
 

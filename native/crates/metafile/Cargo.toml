@@ -1,0 +1,19 @@
+[package]
+name = "durer-metafile"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Dürer Windows metafiles: hand-written EMF and WMF writers and readers"
+
+[lints]
+workspace = true
+
+[dependencies]
+durer-geom = { workspace = true }
+durer-color = { workspace = true }
+durer-doc = { workspace = true }
+durer-effects = { workspace = true }
+durer-brush = { workspace = true }
+durer-text = { workspace = true }
+kurbo = { workspace = true }
+image = { workspace = true }

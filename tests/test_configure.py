@@ -73,7 +73,8 @@ def test_explicit_cli_path_overrides_local_configuration_without_absolute_produc
 
     result = module.configure(str(cli))
 
-    assert result["vectorcraft_cli"] == str(cli.resolve())
+    assert result["engine"] == "durer"
+    assert "vectorcraft_cli" not in result
     assert result["port"] == 5000
     product_sources = (CONFIGURE.read_text(encoding="utf-8") +
                        (ROOT / "scripts" / "setup.ps1").read_text(encoding="utf-8"))

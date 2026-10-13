@@ -18,6 +18,9 @@ if (-not (Test-Path $VenvPython)) { py -3 -m venv (Join-Path $Root '.venv') }
 & $VenvPython -m pip install -e $Root
 & $VenvPython -m pip install -e $HoardLink
 
+& $VenvPython (Join-Path $Root 'scripts\build_engine.py')
+if ($LASTEXITCODE -ne 0) { throw 'Dürer engine build failed.' }
+
 $Configure = Join-Path $Root 'scripts\configure.py'
 if ($VectorCraftCli) {
     & $VenvPython $Configure $VectorCraftCli

@@ -25,9 +25,9 @@ POINTS_PER_UNIT = {
 
 
 def canvas_settings(width: float | None, height: float | None, units: str | None) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Convert requested dimensions to points; units selects VectorCraft's ruler display."""
+    """Convert requested dimensions to points; units selects Dürer's ruler display."""
     if units is not None and units not in CANVAS_UNITS:
-        raise ValueError("Unsupported canvas units; use VectorCraft's documented units")
+        raise ValueError("Unsupported canvas units; use Dürer's documented units")
     params: dict[str, Any] = {}
     manifest: dict[str, Any] = {}
     for name, value in (("width", width), ("height", height)):
@@ -83,7 +83,9 @@ def read(project_id: str) -> dict[str, Any]:
     if not path.is_file():
         raise FileNotFoundError("Illustration not found")
     data = json.loads(path.read_text(encoding="utf-8"))
-    data["project_file"] = str(project_root(project_id) / "project.vectorcraft")
+    data["native_format"] = ".durer"
+    data["engine"] = "Dürer engine"
+    data["project_file"] = str(project_root(project_id) / "project.durer")
     data["reference"] = f"hoard://durer/illustration/{project_id}"
     return data
 
@@ -111,7 +113,7 @@ def create(title: str, *, source: Path | None = None, source_name: str | None = 
     (root / "exports").mkdir(parents=True)
     (root / "sources").mkdir()
     manifest = {"id": project_id, "title": title, "created_at": _now(), "updated_at": _now(),
-                "source": None, "native_format": ".vectorcraft", "engine": "VectorCraft 0.3.1"}
+                "source": None, "native_format": ".durer", "engine": "Dürer engine"}
     if canvas:
         manifest["canvas"] = dict(canvas)
     if source:

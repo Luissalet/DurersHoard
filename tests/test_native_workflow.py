@@ -17,16 +17,11 @@ from fastapi.testclient import TestClient
 
 
 def _find_verified_cli() -> Path | None:
-    candidates = [os.environ.get("DURER_VECTORCRAFT_CLI")]
     try:
-        from durer_hoard.config import settings
-        configured = settings().vectorcraft_cli
-        candidates.append(str(configured) if configured else None)
-    except Exception:
-        pass
-    candidates.extend([shutil.which("vectorcraft-cli.exe"), shutil.which("vectorcraft-cli")])
-    return next((Path(path).expanduser().resolve() for path in candidates
-                 if path and Path(path).expanduser().is_file()), None)
+        from durer_hoard.native import executable
+        return executable()
+    except RuntimeError:
+        return None
 
 
 CLI = _find_verified_cli()
@@ -36,7 +31,7 @@ def _own_native_processes():
     if os.name != "nt":
         return None
     import subprocess
-    query = f"Get-CimInstance Win32_Process -Filter \"Name='vectorcraft-cli.exe' AND ParentProcessId={os.getpid()}\" | Select-Object ProcessId,ParentProcessId | ConvertTo-Json -Compress"
+    query = f"Get-CimInstance Win32_Process -Filter \"Name='durer-cli.exe' AND ParentProcessId={os.getpid()}\" | Select-Object ProcessId,ParentProcessId | ConvertTo-Json -Compress"
     result = subprocess.check_output(["powershell", "-NoProfile", "-Command", query], text=True).strip()
     rows = json.loads(result) if result else []
     return rows if isinstance(rows, list) else [rows]
@@ -45,7 +40,7 @@ def _own_native_processes():
 @pytest.fixture
 def isolated(monkeypatch, tmp_path):
     if not CLI or not CLI.is_file():
-        pytest.skip("Verified VectorCraft 0.3.1 bundle is unavailable")
+        pytest.skip("Build the owned Dürer engine before running native checks")
     monkeypatch.setenv("DURER_DATA_DIR", str(tmp_path / "data"))
     monkeypatch.setenv("DURER_VECTORCRAFT_CLI", str(CLI))
     yield tmp_path / "data"
@@ -63,7 +58,7 @@ def test_native_create_edit_undo_reopen_and_export(isolated):
 
     item = store.create("Native illustration")
     root = store.project_root(item["id"])
-    project = root / "project.vectorcraft"
+    project = root / "project.durer"
     source = root / "sources" / "reference.svg"
     source.write_text('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><circle cx="40" cy="40" r="20"/></svg>', encoding="utf-8")
     original_hash = hashlib.sha256(source.read_bytes()).hexdigest()
@@ -169,7 +164,7 @@ def test_file_snapshots_restore_undo_and_redo_after_engine_restart(isolated):
     from durer_hoard.sessions import sessions
 
     item = store.create("Restart recovery")
-    project = store.project_root(item["id"]) / "project.vectorcraft"
+    project = store.project_root(item["id"]) / "project.durer"
     sessions.execute(item["id"], project, [])
     original = hashlib.sha256(project.read_bytes()).hexdigest()
     changed = execute(item["id"], project, [{"name": "draw_shape", "arguments": {
@@ -196,7 +191,7 @@ def test_concurrent_first_calls_share_one_native_session_and_keep_both_edits(iso
     from durer_hoard.sessions import sessions
 
     item = store.create("Concurrent native session")
-    project = store.project_root(item["id"]) / "project.vectorcraft"
+    project = store.project_root(item["id"]) / "project.durer"
     actions = [
         {"name": "draw_shape", "arguments": {"shape": "rectangle", "x": 10, "y": 12,
          "width": 70, "height": 40, "fill": "#cf6749"}},
@@ -240,13 +235,13 @@ def test_external_native_edit_survives_reopen_and_app_undo(isolated):
     from durer_hoard.sessions import sessions
 
     external = store.create("External source document")
-    external_path = store.project_root(external["id"]) / "project.vectorcraft"
+    external_path = store.project_root(external["id"]) / "project.durer"
     external_edit = sessions.execute(external["id"], external_path, [{"name": "draw_shape", "arguments": {
         "shape": "ellipse", "x": 20, "y": 25, "width": 75, "height": 50, "fill": "#123456"}}])
     external_fills = [layer["fill"] for layer in json.loads(
         external_edit[-1]["result"]["content"][0]["text"])["layers"][0]["children"]]
     target = store.create("Externally updated document")
-    target_path = store.project_root(target["id"]) / "project.vectorcraft"
+    target_path = store.project_root(target["id"]) / "project.durer"
     sessions.execute(target["id"], target_path, [])
     sessions.close()
 
@@ -388,7 +383,7 @@ def test_faustus_stdio_mcp_lists_and_dispatches_complete_native_tools(isolated):
                 project_id = payload["illustration"]["id"]
                 from durer_hoard.store import project_root
                 assert payload["illustration"]["canvas"] == {"width": 400, "height": 300, "width_points": 400.0, "height_points": 300.0, "units": "Points"}
-                assert json.loads(subprocess.check_output([str(CLI), "info", str(project_root(project_id) / "project.vectorcraft")], text=True))["artboards"][0]["rect"] == [0.0, 0.0, 400.0, 300.0]
+                assert json.loads(subprocess.check_output([str(CLI), "info", str(project_root(project_id) / "project.durer")], text=True))["artboards"][0]["rect"] == [0.0, 0.0, 400.0, 300.0]
                 drawn = await client.call_tool("vectorcraft_draw_shape", {
                     "project_id": project_id,
                     "shape": "rectangle", "x": 15, "y": 25, "width": 85, "height": 65,
@@ -601,7 +596,7 @@ def test_real_gallery_cache_does_not_create_editor_processes_and_invalidates(iso
     for index, color in enumerate(("#e02010", "#1050e0", "#10a020")):
         item = store.create(f"Gallery cache fixture {index}", source=source)
         root = store.project_root(item["id"])
-        path = root / "project.vectorcraft"
+        path = root / "project.durer"
         results = sessions.execute(item["id"], path, [{"name": "draw_shape", "arguments": {
             "shape": "rectangle", "x": 30, "y": 40, "width": 120, "height": 90, "fill": color}}],
             new_document={"width": 720, "height": 480})
@@ -705,7 +700,7 @@ def test_transient_thumbnail_converters_are_bounded_and_failures_clean_up(isolat
         for job in jobs:
             job.result()
     assert peak == 2 and active == 0
-    project = isolated.parent / "project.vectorcraft"
+    project = isolated.parent / "project.durer"
     project.write_bytes(b"synthetic native failure fixture")
     def fail(*args):
         raise RuntimeError("Native converter failed")
@@ -729,7 +724,7 @@ def test_real_thumbnail_snapshot_retains_relative_linked_image_context(isolated)
     Image.new("RGB", (24, 24), (64, 176, 128)).save(asset)
     source = root / "sources" / "source.svg"
     source.write_text('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><image href="linked.png" x="10" y="10" width="60" height="60"/></svg>', encoding="utf-8")
-    project = root / "project.vectorcraft"
+    project = root / "project.durer"
     results = sessions.execute(item["id"], project, [{"name": "open_file", "arguments": {"path": str(source)}}])
     assert not any(row["is_error"] for row in results)
     sessions.close()
