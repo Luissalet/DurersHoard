@@ -257,4 +257,3 @@ The Objects pane exposes a native tool selector, Run control and JSON arguments.
 - **Don't** hide desktop opening, project download, undo, redo, format selection or export to simplify mobile.
 - **Don't** turn existing glyph icons or tracked uppercase labels into a required pattern for new surfaces.
 - **Don't** infer measured contrast, complete accessibility or native feature parity from this record.
-
