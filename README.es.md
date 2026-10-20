@@ -1,3 +1,7 @@
+> **Absorbido por [Daguerre's Hoard](https://github.com/Luissalet/DaguerresHoard).**
+> Las funciones de este proyecto se mantienen en el Hoard fusionado, con módulos independientes y apagados inicialmente.
+> El código y las instrucciones siguientes se conservan como referencia histórica; usa el repositorio enlazado para la instalación actual.
+
 # Dürer's Hoard
 
 Taller local de ilustración vectorial con motor Rust y editor de escritorio propios, documentos `.durer` editables y el catálogo completo de herramientas y comandos. Conserva los documentos históricos y sus fuentes.
